@@ -186,6 +186,18 @@ button.sidebar__nav-link {
   border-left: 0;
 }
 
+.sidebar__nav-link {
+  transition: font-size 0.15s ease;
+}
+
+.sidebar__nav-link--active {
+  font-size: calc(var(--font-size-xxxl) * 1.15);
+}
+
+.sidebar__nav-link--active .sidebar__nav-icon-wrapper {
+  --sidebar-icon-size: 3.5rem;
+}
+
 .sidebar__nav-link--active .sidebar__nav-label {
   font-family: "Playfair Display", "Times New Roman", Georgia, serif;
   font-style: italic;
@@ -200,8 +212,9 @@ button.sidebar__nav-link {
 }
 
 .sidebar__nav-icon-wrapper {
-  --sidebar-icon-size: 2rem;
+  --sidebar-icon-size: 3rem;
 
+  position: relative;
   display: grid;
   place-items: center;
   inline-size: var(--sidebar-icon-size);
@@ -210,6 +223,32 @@ button.sidebar__nav-link {
   flex-shrink: 0;
   background: transparent;
   color: var(--color-space-accent);
+  transition: inline-size 0.15s ease, block-size 0.15s ease;
+}
+
+// PNG icon pair (illustrative nav icons): stack idle + active on top of each
+// other inside the wrapper, then fade between them based on whether the parent
+// nav link carries the --active modifier.
+.sidebar__nav-icon--idle,
+.sidebar__nav-icon--active {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar__nav-icon--active {
+  opacity: 0;
+}
+
+.sidebar__nav-link--active .sidebar__nav-icon--idle {
+  opacity: 0;
+}
+
+.sidebar__nav-link--active .sidebar__nav-icon--active {
+  opacity: 1;
 }
 
 .sidebar__nav-avatar {
@@ -320,7 +359,11 @@ button.sidebar__nav-link {
   }
 
   .sidebar__nav-icon-wrapper {
-    --sidebar-icon-size: 1.65rem;
+    --sidebar-icon-size: 2.4rem;
+  }
+
+  .sidebar__nav-link--active .sidebar__nav-icon-wrapper {
+    --sidebar-icon-size: 2.8rem;
   }
 
   .sidebar__nav-link {

@@ -3,7 +3,7 @@
        data-controller="sidebar-active nav-history"
        data-turbo-permanent
        aria-label="Main">
-  <%= link_to root_path, class: "sidebar__logo", "aria-label": "Stardance home" do %>
+  <%= link_to root_path, class: "sidebar__logo", "aria-label": "Stardance home", data: { turbo: true } do %>
     <%= image_tag "landing/header/stardance-logo.png", alt: "Hack Club Stardance Challenge", class: "sidebar__logo-img" %>
   <% end %>
 
@@ -15,7 +15,8 @@
         <li class="sidebar__nav-item" data-onboarding-target="<%= item[:slug] %>">
           <% icon_block = capture do %>
             <span class="sidebar__nav-icon-wrapper" aria-hidden="true">
-              <% if item[:icon] == :avatar %>
+              <% case item[:icon] %>
+              <% when :avatar %>
                 <% if user.slack_id.present? %>
                   <%= image_tag user.avatar, alt: "", class: "sidebar__nav-avatar" %>
                 <% else %>
@@ -23,6 +24,9 @@
                     <%= user.display_name.first.upcase %>
                   </span>
                 <% end %>
+              <% when Hash %>
+                <%= image_tag "icons/#{item[:icon][:idle]}.png", alt: "", class: "sidebar__nav-icon sidebar__nav-icon--idle" %>
+                <%= image_tag "icons/#{item[:icon][:active]}.png", alt: "", class: "sidebar__nav-icon sidebar__nav-icon--active" %>
               <% else %>
                 <%= inline_svg_tag "icons/#{item[:icon]}.svg", class: "sidebar__nav-icon" %>
               <% end %>
@@ -49,7 +53,7 @@
               <span class="sidebar__nav-label"><%= item[:label] %></span>
             </span>
           <% else %>
-            <%= link_to item[:path], class: link_classes, aria: (active?(item) ? { current: "page" } : {}), data: { active_prefix: item[:active_prefix] }.compact do %>
+            <%= link_to item[:path], class: link_classes, aria: (active?(item) ? { current: "page" } : {}), data: { turbo: true, active_prefix: item[:active_prefix] }.compact do %>
               <%= icon_block %>
               <span class="sidebar__nav-label"><%= item[:label] %></span>
             <% end %>
@@ -63,7 +67,7 @@
     <div class="sidebar__user-card">
       <div class="sidebar__user-meta">
         <span class="sidebar__user-meta-label">logged in as</span>
-        <%= link_to user_path(user), class: "sidebar__user-meta-handle" do %>
+        <%= link_to user_path(user), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
           @<%= user.display_name %>
         <% end %>
       </div>
