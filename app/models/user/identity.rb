@@ -26,18 +26,21 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class User::Identity < ApplicationRecord
-    belongs_to :user
-    has_encrypted :access_token, :refresh_token
-    blind_index :access_token, :refresh_token, slow: true
-    has_paper_trail only: [ :id, :user_id, :uid, :provider ]
+  belongs_to :user
+  has_encrypted :access_token, :refresh_token
+  blind_index :access_token, :refresh_token, slow: true
+  has_paper_trail only: [ :id, :user_id, :uid, :provider ]
 
-    PROVIDERS = %w[hackatime hack_club].freeze
+  PROVIDERS = %w[hackatime hack_club].freeze
 
-    validates :provider, :uid, presence: true
-    validates :access_token, presence: true
-    validates :provider, inclusion: { in: PROVIDERS }
-    validates :uid, uniqueness: { scope: :provider }
-    validates :provider, uniqueness: { scope: :user_id }
+  scope :hackatime, -> { where(provider: "hackatime") }
+  scope :hack_club, -> { where(provider: "hack_club") }
 
-    after_create_commit -> { user&.try_sync_hackatime_data! }, if: -> { provider == "hackatime" }
+  validates :provider, :uid, presence: true
+  validates :access_token, presence: true
+  validates :provider, inclusion: { in: PROVIDERS }
+  validates :uid, uniqueness: { scope: :provider }
+  validates :provider, uniqueness: { scope: :user_id }
+
+  after_create_commit -> { user&.try_sync_hackatime_data! }, if: -> { provider == "hackatime" }
 end

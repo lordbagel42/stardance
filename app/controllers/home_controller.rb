@@ -14,7 +14,7 @@ class HomeController < ApplicationController
       identities = current_user.identities.reload
     end
 
-    @has_hackatime_linked = current_user.has_hackatime?
+    @has_hackatime_linked = current_user.hackatime_identity.present?
     @has_identity_linked = current_user.identity_verified?
 
     CheckSlackMembershipJob.perform_later(current_user) unless current_user.tutorial_step_completed?(:setup_slack)

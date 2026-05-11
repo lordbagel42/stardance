@@ -5,12 +5,8 @@ module User::Achievements
     @earned_achievement_slugs ||= achievements.pluck(:achievement_slug).to_set
   end
 
-  def pending_achievement_notifications
-    achievements.where(notified: false)
-  end
-
   def recalculate_has_pending_achievements!
-    update_column(:has_pending_achievements, achievements.where(notified: false).exists?)
+    update_column(:has_pending_achievements, pending_achievement_notifications.exists?)
   end
 
   def earned_achievement?(slug)

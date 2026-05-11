@@ -45,10 +45,14 @@ class User < ApplicationRecord
   has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
 
   has_many :identities, class_name: "User::Identity", dependent: :destroy
+  has_one :hackatime_identity, -> { hackatime }, class_name: "User::Identity"
+  has_one :hack_club_identity, -> { hack_club }, class_name: "User::Identity"
   has_many :achievements, class_name: "User::Achievement", dependent: :destroy
+  has_many :pending_achievement_notifications, -> { where(notified: false) }, class_name: "User::Achievement"
   has_one :vote_verdict, class_name: "User::VoteVerdict", dependent: :destroy
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
   has_many :projects, through: :memberships
+  has_many :shipped_projects, -> { with_ship_events }, through: :memberships, source: :project
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :destroy
   has_many :shop_orders, dependent: :destroy
   has_many :shop_card_grants, dependent: :destroy
@@ -116,6 +120,5 @@ class User < ApplicationRecord
   include User::StateFlags
   include User::Social
   include User::Profile
-  include User::ActivityStats
   include User::Preferences
 end
