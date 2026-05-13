@@ -52,3 +52,49 @@ class ShipReviewPolicyTest < Minitest::Test
     assert policy.claim?
   end
 end
+
+class ShipReviewPolicyMembershipTest < ActiveSupport::TestCase
+  setup do
+    @member = users(:one)
+    @member.update_column(:granted_roles, [ "project_certifier" ])
+    @non_member = users(:two)
+    @non_member.update_column(:granted_roles, [ "project_certifier" ])
+    @project = projects(:one)
+    @review = ShipReview.create!(project: @project, status: :pending)
+  end
+
+  test "blocks show when reviewer is on the project" do
+    refute ShipReviewPolicy.new(@member, @review).show?
+  end
+
+  test "allows show when reviewer is not on the project" do
+    assert ShipReviewPolicy.new(@non_member, @review).show?
+  end
+
+  test "blocks claim when reviewer is on the project" do
+    refute ShipReviewPolicy.new(@member, @review).claim?
+  end
+
+  test "blocks update when reviewer is on the project" do
+    @review.update!(reviewer_id: @member.id)
+    refute ShipReviewPolicy.new(@member, @review).update?
+  end
+
+  test "scope excludes reviews for projects the user is on" do
+    visible = ShipReviewPolicy::Scope.new(@member, ShipReview).resolve
+    refute_includes visible, @review
+  end
+
+  test "scope excludes reviews for soft-deleted projects" do
+    @project.update_column(:deleted_at, Time.current)
+    visible = ShipReviewPolicy::Scope.new(@non_member, ShipReview).resolve
+    refute_includes visible, @review
+  end
+
+  test "scope includes reviews on other projects for a reviewer" do
+    other_project = projects(:two)
+    other_review = ShipReview.create!(project: other_project, status: :pending)
+    visible = ShipReviewPolicy::Scope.new(@member, ShipReview).resolve
+    assert_includes visible, other_review
+  end
+end

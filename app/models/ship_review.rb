@@ -15,6 +15,16 @@ class ShipReview < ApplicationRecord
   validates :feedback, length: { maximum: 10_000 }, allow_blank: true
   validates :internal_reason, length: { maximum: 10_000 }, allow_blank: true
 
+  scope :for_reviewer, ->(user) {
+    joins(:project)
+      .where(projects: { deleted_at: nil })
+      .where.not(project_id: user.memberships.select(:project_id))
+  }
+
+  def self.available_for(user)
+    super(user).merge(for_reviewer(user))
+  end
+
   after_save :sync_project_state!, if: :saved_change_to_status?
   after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
 
