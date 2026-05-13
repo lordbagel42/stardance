@@ -302,11 +302,11 @@
 
     <% if is_member %>
       <nav class="project-show__actions" aria-label="Project actions">
-        <%= link_to new_project_devlog_path(@project),
-                    class: "project-show__action project-show__action--secondary",
-                    data: { turbo_frame: "_top" } do %>
+        <button type="button"
+                class="project-show__action project-show__action--secondary"
+                onclick="document.getElementById('composer-modal-' + <%= @project.id.to_json %>).showModal()">
           Post a devlog<span class="project-show__action-icon" aria-hidden="true">+</span>
-        <% end %>
+        </button>
         <%= link_to new_project_ships_path(@project),
                     class: "project-show__action project-show__action--primary",
                     data: { turbo_frame: "_top" } do %>
@@ -460,6 +460,20 @@
     <% end %>
 
   </div>
+
+  <% if is_member && @composer_devlog && @composer_projects %>
+    <dialog id="composer-modal-<%= @project.id %>"
+            class="composer-modal"
+            data-controller="modal"
+            aria-label="Post a devlog">
+      <%= render Posts::ComposerComponent.new(
+            post: @composer_devlog,
+            current_user: current_user,
+            projects: @composer_projects,
+            selected_project: @project
+          ) %>
+    </dialog>
+  <% end %>
 
   <%= render DiscoverRailComponent.new %>
 </div>

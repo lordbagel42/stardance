@@ -18,6 +18,11 @@ class ProjectsController < ApplicationController
     @viewer_follow = current_user && @project.project_follows.find_by(user_id: current_user.id)
     @total_hours = (@project.duration_seconds / 3600.0).round
 
+    if @is_member && current_user
+      @composer_devlog = Post::Devlog.new
+      @composer_projects = current_user.projects.order(updated_at: :desc)
+    end
+
     if @can_edit_project && current_user
       @project_times = {}
       @available_hackatime_projects = current_user.hackatime_projects.order(:name)
