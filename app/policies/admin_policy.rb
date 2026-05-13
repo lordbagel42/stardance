@@ -138,4 +138,8 @@ class AdminPolicy < ApplicationPolicy
   def access_flavortime_dashboard?
     user.admin? || user.flavortime?
   end
+
+  def access_reviews?
+    user.admin? || user.guardian_of_integrity?
+  end
 end

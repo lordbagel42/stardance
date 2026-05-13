@@ -39,7 +39,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class YswsReview < ApplicationRecord
-  belongs_to :reviewer, class_name: "User"
+  belongs_to :reviewer, class_name: "User", optional: true
   belongs_to :user
   belongs_to :project
   belongs_to :ship_cert, class_name: "Post::ShipEvent", optional: true # temporary until ship certs are implemented
@@ -49,5 +49,5 @@ class YswsReview < ApplicationRecord
   has_many :devlog_reviews, dependent: :destroy
 
   validates :original_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: false
-  validates :approved_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: false
+  validates :approved_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 end

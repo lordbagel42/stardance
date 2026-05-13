@@ -31,6 +31,7 @@ class Projects::ShipsController < ApplicationController
       )
       @post = @project.posts.create!(user: current_user, postable: ship_event)
       maybe_create_mission_submission(ship_event, mission_payout_path)
+      maybe_create_ysws_review(ship_event)
     end
 
     if initial_ship?
@@ -99,6 +100,34 @@ class Projects::ShipsController < ApplicationController
         .joins(ship_event: { post: :user })
         .where(users: { id: current_user.id })
         .where.not(shop_order_id: nil)
+        .exists?
+    end
+
+    def maybe_create_ysws_review(ship_event)
+      # Only create review if this is NOT the first ship (i.e., there are previous approved ships)
+      return unless has_previous_approved_ships?
+
+      # Calculate hours worked between ships and convert to minutes
+      hours_worked = ship_event.hours || 0
+      original_minutes = (hours_worked * 60).to_i
+
+      YswsReview.create!(
+        user: current_user,
+        project: @project,
+        post_ship_event: ship_event,
+        ship_cert_id: nil, # Will be set later when this ship is certified
+        original_minutes: original_minutes,
+        approved_minutes: nil, # Will be set by reviewer
+        reviewed_at: nil, # Will be set when reviewed
+        reviewer_id: nil # Will be assigned by admin
+      )
+    end
+
+    def has_previous_approved_ships?
+      @project.posts
+        .joins("INNER JOIN post_ship_events ON posts.postable_id = post_ship_events.id")
+        .where(postable_type: "Post::ShipEvent")
+        .where(post_ship_events: { certification_status: "approved" })
         .exists?
     end
 end
