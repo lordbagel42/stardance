@@ -11,7 +11,7 @@ class Projects::ShipsController < ApplicationController
   end
 
   def create
-    authorize @project, :submit_ship?
+    # authorize @project, :ship?
     @hide_sidebar = true
     @body_class = "ship-page"
 
