@@ -525,7 +525,9 @@ Rails.application.routes.draw do
   # My
   namespace :my do
     resource :balance, only: [ :show ]
-    resource :settings, only: [ :update ]
+    resource :settings, only: [ :update ] do
+      post :streamer_mode, on: :member, action: :toggle_streamer_mode
+    end
     resources :dismissals, only: [ :create ]
   end
   get "my/achievements", to: "achievements#index", as: :my_achievements

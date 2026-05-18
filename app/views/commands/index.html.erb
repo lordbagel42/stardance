@@ -7,7 +7,8 @@
           id="cp-item-<%= i %>"
           data-command-palette-target="item"
           data-action="click->command-palette#select mouseenter->command-palette#highlight"
-          data-path="<%= cmd.path %>">
+          data-path="<%= cmd.path %>"
+          <% if cmd.post? %> data-method="post"<% end %>>
         <% if cmd.icon %>
           <span class="command-palette__item-icon" aria-hidden="true">
             <%= inline_svg_tag "icons/#{cmd.icon}.svg", class: "command-palette__icon" %>

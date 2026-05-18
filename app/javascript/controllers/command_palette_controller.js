@@ -87,9 +87,14 @@ export default class extends Controller {
   }
 
   select(event) {
-    const path = event.currentTarget.dataset.path;
-    if (path) {
-      this.close();
+    const item = event.currentTarget;
+    const path = item.dataset.path;
+    if (!path) return;
+
+    this.close();
+    if (item.dataset.method === "post") {
+      this._postAction(path);
+    } else {
       window.Turbo.visit(path);
     }
   }
@@ -106,10 +111,28 @@ export default class extends Controller {
 
   _activate() {
     const item = this.itemTargets[this._activeIndex];
-    if (item?.dataset.path) {
-      this.close();
+    if (!item?.dataset.path) return;
+
+    this.close();
+    if (item.dataset.method === "post") {
+      this._postAction(item.dataset.path);
+    } else {
       window.Turbo.visit(item.dataset.path);
     }
+  }
+
+  _postAction(path) {
+    const token = document.querySelector("meta[name='csrf-token']")?.content;
+    const url = new URL(path, window.location.origin);
+    const enable = url.searchParams.get("enable") === "true";
+    fetch(path, {
+      method: "POST",
+      headers: { "X-CSRF-Token": token },
+    }).then(() => {
+      document.body.classList.toggle("streamer-mode", enable);
+      const cb = document.getElementById("streamer_mode");
+      if (cb) cb.checked = enable;
+    });
   }
 
   _applyActive() {

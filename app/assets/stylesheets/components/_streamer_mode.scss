@@ -1,0 +1,10 @@
+body.streamer-mode .sensitive {
+  filter: blur(8px);
+  user-select: none;
+  transition: filter 0.2s;
+
+  &:hover {
+    filter: blur(0);
+    user-select: auto;
+  }
+}
