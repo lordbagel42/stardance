@@ -19,10 +19,6 @@ class UserPolicy < ApplicationPolicy
     true
   end
 
-  def view_unapproved_ship_events?
-    user&.admin?
-  end
-
   def view_deleted_devlogs?
     user&.can_see_deleted_devlogs?
   end

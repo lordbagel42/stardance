@@ -766,9 +766,9 @@ Rails.application.routes.draw do
     resource :og_image, only: [ :show ], module: :users, defaults: { format: :png }
     resource :follow, only: [ :create, :destroy ]
     member do
-      get :devlogs
-      get :replies
-      get :projects
+      get :devlogs,  action: :show, defaults: { tab: "devlogs" }
+      get :replies,  action: :show, defaults: { tab: "replies" }
+      get :projects, action: :show, defaults: { tab: "projects" }
       get :followers
       get :following
     end
