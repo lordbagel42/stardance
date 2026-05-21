@@ -43,6 +43,9 @@ application.register("faq-accordion", FaqAccordionController);
 import FileUploadController from "./file_upload_controller";
 application.register("file-upload", FileUploadController);
 
+import StarImageInputController from "./star_image_input_controller";
+application.register("star-image-input", StarImageInputController);
+
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
 
