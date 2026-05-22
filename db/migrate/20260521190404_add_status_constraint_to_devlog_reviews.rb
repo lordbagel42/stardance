@@ -1,15 +1,16 @@
 class AddStatusConstraintToDevlogReviews < ActiveRecord::Migration[8.1]
-  def up
+  def change
     # Backfill any NULL statuses to 'pending'
-    DevlogReview.where(status: nil).update_all(status: "pending")
+    reversible do |dir|
+      dir.up do
+        DevlogReview.where(status: nil).update_all(status: "pending")
+      end
+    end
 
-    # Add default and NOT NULL constraint
+    # Add default
     change_column_default :devlog_reviews, :status, "pending"
-    change_column_null :devlog_reviews, :status, false
-  end
 
-  def down
-    change_column_null :devlog_reviews, :status, true
-    change_column_default :devlog_reviews, :status, nil
+    # Add check constraint without validating (non-blocking)
+    add_check_constraint :devlog_reviews, "status IS NOT NULL", name: "devlog_reviews_status_null", validate: false
   end
 end
