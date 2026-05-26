@@ -579,7 +579,8 @@
             post: @composer_devlog,
             current_user: current_user,
             projects: @composer_projects,
-            selected_project: @project
+            selected_project: @project,
+            test_time_granted: @test_time_granted
           ) %>
     </dialog>
   <% end %>
@@ -603,7 +604,7 @@
         <div class="ship-warning-modal__actions">
           <button type="button"
                   class="ship-warning-modal__btn ship-warning-modal__btn--secondary"
-                  onclick="document.getElementById('ship-warning-modal-<%= @project.id %>').close(); document.getElementById('composer-modal-<%= @project.id %>').showModal()">
+                  onclick="document.getElementById('ship-warning-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('composer-modal-' + <%= @project.id.to_json %>).showModal()">
             Post a devlog
           </button>
           <%= link_to "Ship anyway →",

@@ -24,7 +24,7 @@ class HomeController < ApplicationController
 
     ship_events = Post.of_ship_events(join: true)
                       .where.not(post_ship_events: { certification_status: "rejected" })
-                      .includes(:user, :project)
+                      .includes(:user, :project, :postable)
                       .order(created_at: :desc)
                       .limit(20)
 

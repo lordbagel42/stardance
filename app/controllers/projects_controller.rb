@@ -140,9 +140,16 @@ class ProjectsController < ApplicationController
   def add_test_time
     authorize @project
 
+    hackatime_project = current_user.hackatime_projects.find_or_initialize_by(name: test_time_hackatime_project_name)
+    hackatime_project.project = @project
+    hackatime_project.save!
+
     session[test_time_session_key] = true
     redirect_back fallback_location: project_path(@project),
                   notice: "15 minutes of test time added - post your devlog now"
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_back fallback_location: project_path(@project),
+                  alert: e.record.errors.full_messages.to_sentence
   end
 
   def new
@@ -185,16 +192,8 @@ class ProjectsController < ApplicationController
 
     if success
       flash[:notice] = "Project created successfully"
-      current_user.complete_tutorial_step! :create_project
 
       project_hours = @project.total_hackatime_hours
-      # if project_hours > 0
-      #   tutorial_message OnboardingCopy::PROJECT_CREATED_WITH_HOURS.call(
-      #     helpers.distance_of_time_in_words(project_hours.hours)
-      #   )
-      # else
-      #   tutorial_message OnboardingCopy::PROJECT_CREATED_NO_HOURS
-      # end
 
       if (slug = params[:mission_slug].presence)
         mission = Mission.find_by(slug: slug)
@@ -283,7 +282,6 @@ class ProjectsController < ApplicationController
       end
 
       @project.soft_delete!(force: force)
-      current_user.revoke_tutorial_step! :create_project if current_user.projects.empty?
       flash[:notice] = "Project deleted successfully"
       redirect_to projects_user_path(current_user)
     rescue ActiveRecord::RecordInvalid => e
@@ -505,5 +503,9 @@ class ProjectsController < ApplicationController
 
   def test_time_session_key
     "test_time_project_#{@project.id}"
+  end
+
+  def test_time_hackatime_project_name
+    "stardance-test-time-#{@project.id}"
   end
 end
