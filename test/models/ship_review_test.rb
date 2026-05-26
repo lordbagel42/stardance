@@ -34,13 +34,12 @@ class ShipReviewTest < ActiveSupport::TestCase
 
   setup do
     @project = projects(:one)
-    @reviewer = users(:one)
+    @reviewer = users(:two)
   end
 
   def with_owner_and_ship_event
-    owner = users(:two)
-    owner.update_column(:slack_id, "U_OWNER") if owner.slack_id.blank?
-    Project::Membership.find_or_create_by!(project: @project, user: owner) { |m| m.role = :owner }
+    owner = users(:three)
+    Project::Membership.create!(project: @project, user: owner, role: :owner)
     ship_event = Post::ShipEvent.new(body: "test ship")
     ship_event.save!(validate: false)
     @project.posts.create!(user: owner, postable: ship_event)
@@ -53,7 +52,7 @@ class ShipReviewTest < ActiveSupport::TestCase
   end
 
   test "available_for excludes reviews claimed by another reviewer" do
-    other = users(:two)
+    other = users(:three)
     review = ShipReview.create!(project: @project, status: :pending,
                                 reviewer: other, claim_expires_at: 5.minutes.from_now)
     refute_includes ShipReview.available_for(@reviewer), review
@@ -66,7 +65,7 @@ class ShipReviewTest < ActiveSupport::TestCase
   end
 
   test "available_for includes expired claims regardless of holder" do
-    other = users(:two)
+    other = users(:three)
     review = ShipReview.create!(project: @project, status: :pending,
                                 reviewer: other, claim_expires_at: 1.minute.ago)
     assert_includes ShipReview.available_for(@reviewer), review
@@ -81,7 +80,7 @@ class ShipReviewTest < ActiveSupport::TestCase
   end
 
   test "atomic_claim returns nil when another reviewer holds an active claim" do
-    other = users(:two)
+    other = users(:three)
     review = ShipReview.create!(project: @project, status: :pending,
                                 reviewer: other, claim_expires_at: 5.minutes.from_now)
     assert_nil ShipReview.atomic_claim!(review.id, @reviewer)
@@ -111,6 +110,7 @@ class ShipReviewTest < ActiveSupport::TestCase
 
   test "user can re-ship after needs_changes" do
     @project.update!(ship_status: :needs_changes)
+    @project.define_singleton_method(:shippable?) { true }
     assert @project.may_submit_for_review?, "needs_changes projects must be able to re-submit"
   end
 
@@ -187,9 +187,9 @@ class ShipReviewTest < ActiveSupport::TestCase
   end
 
   test "skips DM when owner has no slack_id" do
-    owner = users(:two)
+    owner = users(:three)
     owner.update_column(:slack_id, nil)
-    Project::Membership.find_or_create_by!(project: @project, user: owner) { |m| m.role = :owner }
+    Project::Membership.create!(project: @project, user: owner, role: :owner)
     @project.update!(ship_status: :submitted)
     review = ShipReview.create!(project: @project, status: :pending)
 

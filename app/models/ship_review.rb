@@ -57,10 +57,20 @@ class ShipReview < ApplicationRecord
     ).merge(for_reviewer(user))
   }
 
+  before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }
+  before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last != "pending" && decided_at.nil? }
   after_save :sync_project_state!, if: :saved_change_to_status?
   after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
 
   private
+
+  def stamp_claimed_at
+    self.claimed_at = Time.current
+  end
+
+  def stamp_decided_at
+    self.decided_at = Time.current
+  end
 
   def sync_project_state!
     return if pending?
