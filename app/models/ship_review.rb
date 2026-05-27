@@ -28,7 +28,7 @@
 #  fk_rails_...  (reviewer_id => users.id)
 #
 class ShipReview < ApplicationRecord
-  include Reviewable
+  include Certification::Ship::Reviewable
 
   belongs_to :project
   belongs_to :reviewer, class_name: "User", optional: true
