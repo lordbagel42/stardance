@@ -4,7 +4,7 @@ export default class extends Controller {
   static values = {
     duration: { type: Number, default: 700 },
     autoAdvanceDelay: { type: Number, default: 0 },
-    autoAdvanceHref: { type: String, default: "" }
+    autoAdvanceHref: { type: String, default: "" },
   };
 
   connect() {

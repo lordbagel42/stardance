@@ -8,7 +8,7 @@ export default class extends Controller {
   static values = {
     url: String,
     debounce: { type: Number, default: 350 },
-    max: { type: Number, default: 30 }
+    max: { type: Number, default: 30 },
   };
 
   connect() {
@@ -53,7 +53,7 @@ export default class extends Controller {
       const res = await fetch(url, {
         headers: { Accept: "application/json" },
         signal: this.abortController.signal,
-        credentials: "same-origin"
+        credentials: "same-origin",
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -79,7 +79,10 @@ export default class extends Controller {
   _setSubmitDisabled(disabled) {
     if (!this.hasSubmitTarget) return;
     this.submitTarget.disabled = disabled;
-    this.submitTarget.classList.toggle("special-action-btn--disabled", disabled);
+    this.submitTarget.classList.toggle(
+      "special-action-btn--disabled",
+      disabled,
+    );
   }
 
   _updateCounter() {
