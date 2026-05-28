@@ -61,16 +61,6 @@
 #                onboarding_interests_result GET    /onboarding/interests_result(.:format)                                                            onboarding/wizard#interests_result
 #                            onboarding_name GET    /onboarding/name(.:format)                                                                        onboarding/wizard#name
 #                                            POST   /onboarding/name(.:format)                                                                        onboarding/wizard#submit_name
-#                                helper_root GET    /helper(.:format)                                                                                 helper/application#index
-#                        balance_helper_user GET    /helper/users/:id/balance(.:format)                                                               helper/users#balance
-#                               helper_users GET    /helper/users(.:format)                                                                           helper/users#index
-#                                helper_user GET    /helper/users/:id(.:format)                                                                       helper/users#show
-#                     restore_helper_project POST   /helper/projects/:id/restore(.:format)                                                            helper/projects#restore
-#                            helper_projects GET    /helper/projects(.:format)                                                                        helper/projects#index
-#                             helper_project GET    /helper/projects/:id(.:format)                                                                    helper/projects#show
-#                         helper_shop_orders GET    /helper/shop_orders(.:format)                                                                     helper/shop_orders#index
-#                          helper_shop_order GET    /helper/shop_orders/:id(.:format)                                                                 helper/shop_orders#show
-#                       helper_support_vibes GET    /helper/support_vibes(.:format)                                                                   helper/support_vibes#index
 #                                 admin_root GET    /admin(.:format)                                                                                  admin/application#index
 #                               admin_blazer        /admin/blazer                                                                                     Blazer::Engine
 #                                                   /admin/flipper                                                                                    Flipper::UI
@@ -563,17 +553,6 @@ Rails.application.routes.draw do
     get  :name,                      to: "wizard#name"
     post :name,                      to: "wizard#submit_name"
   end
-
-  get "/helper", to: redirect("/admin/support")
-  get "/helper/users", to: redirect("/admin/users")
-  get "/helper/users/:id", to: redirect("/admin/users/%{id}")
-  get "/helper/users/:id/balance", to: redirect("/admin/users/%{id}")
-  get "/helper/projects", to: redirect("/admin/projects")
-  get "/helper/projects/:id", to: redirect("/admin/projects/%{id}")
-  post "/helper/projects/:id/restore", to: redirect("/admin/projects/%{id}")
-  get "/helper/shop_orders", to: redirect("/admin/shop/orders")
-  get "/helper/shop_orders/:id", to: redirect("/admin/shop/orders/%{id}")
-  get "/helper/support_vibes", to: redirect("/admin/support")
 
   # admin shallow routing
   namespace :admin, constraints: AdminConstraint do

@@ -2,6 +2,7 @@ class Admin::UsersController < Admin::ApplicationController
     skip_before_action :prevent_admin_access_while_impersonating, only: [ :stop_impersonating ]
 
     def index
+      authorize [ :admin, :user ]
       @query = params[:query]
 
       users = User.all
@@ -61,6 +62,7 @@ class Admin::UsersController < Admin::ApplicationController
     end
 
     def show
+      authorize [ :admin, :user ]
       @user = User.includes(:identities).find(params[:id])
 
       @all_projects = @user.projects.with_deleted.order(deleted_at: :desc)

@@ -1,6 +1,6 @@
 class Admin::ProjectsController < Admin::ApplicationController
   def index
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ]
     @query = params[:query]
     @filter = params[:filter] || "active"
 
@@ -22,12 +22,12 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def show
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ]
     @project = Project.unscoped.find(params[:id])
   end
 
   def votes
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ], :show?
     @project = Project.find(params[:id])
 
     @pagy, @votes = pagy(
@@ -36,7 +36,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def restore
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ], :restore?
     @project = Project.unscoped.find(params[:id])
 
     if @project.deleted?
@@ -48,7 +48,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def delete
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ], :destroy?
     @project = Project.unscoped.find(params[:id])
 
     if @project.deleted?
@@ -60,7 +60,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def update_ship_status
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ], :update?
     @project = Project.unscoped.find(params[:id])
 
     old_status = @project.ship_status
@@ -103,7 +103,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def force_state
-    authorize :admin, :manage_projects?
+    authorize [ :admin, :project ], :update?
     @project = Project.unscoped.find(params[:id])
 
     state_column = Project.aasm.attribute_name

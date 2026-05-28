@@ -6,8 +6,16 @@ module Admin
     before_action :set_paper_trail_whodunnit
 
     def index
-      authorize :admin, :index?
-      redirect_to admin_users_path
+      authorize :admin
+      if current_user.helper?
+        redirect_to admin_support_path
+      elsif current_user.fraud_dept? && !current_user.admin?
+        redirect_to admin_fraud_path
+      elsif current_user.shop_manager? && !current_user.admin?
+        redirect_to admin_shop_path
+      else
+        redirect_to admin_users_path
+      end
     end
 
     private
