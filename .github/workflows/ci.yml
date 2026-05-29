@@ -127,7 +127,12 @@ jobs:
       - name: Check annotations are up to date
         id: annotate_check
         if: success()
-        run: bundle exec annotaterb models --frozen
+        run: |
+          bundle exec annotaterb models
+          echo "===== DIFF shop_order.rb ====="
+          git --no-pager diff -- app/models/shop_order.rb
+          echo "===== END DIFF ====="
+          git diff --exit-code -- app/models/
       - name: Comment on annotation failure
         if: failure() && steps.annotate_check.outcome == 'failure' && github.event_name == 'pull_request'
         uses: actions/github-script@v9
