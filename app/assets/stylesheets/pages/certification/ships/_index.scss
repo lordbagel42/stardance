@@ -374,6 +374,7 @@
     --grid-line: rgba(255, 255, 255, 0.2);
 
     width: 100%;
+    table-layout: fixed; // lock column widths so Status/action don't shift per filter
     border-collapse: collapse;
     font-size: 0.9rem;
 
@@ -468,13 +469,15 @@
     font-weight: 600;
   }
 
-  // Fixed width so the status pill sits in the same spot on every row.
+  // Fixed widths so Status and the action button stay put on every row and
+  // every filter; Project is the only flexible column and absorbs the rest.
   &__cell-status {
     width: 130px;
     white-space: nowrap;
   }
 
   &__cell-action {
+    width: 120px;
     text-align: right;
     white-space: nowrap;
   }
@@ -483,6 +486,7 @@
     color: var(--color-space-text);
     font-weight: 600;
     text-decoration: none;
+    overflow-wrap: anywhere;
 
     &:hover,
     &:focus-visible {
