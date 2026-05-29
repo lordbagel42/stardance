@@ -31,27 +31,22 @@ export default class extends Controller {
   static targets = ["slider", "hidden", "title", "description", "submit"];
 
   connect() {
-    this.render();
     this._setSubmitEnabled(false);
   }
 
   // Triggered by user input on the slider (drag, click, arrow keys).
   touch() {
-    this.render();
-    this._setSubmitEnabled(true);
-  }
-
-  render() {
     const idx = parseInt(this.sliderTarget.value, 10) || 0;
     const step = LEVELS[idx] || LEVELS[0];
+
     this.hiddenTarget.value = step.value;
     this.titleTarget.textContent = step.title;
     this.descriptionTarget.textContent = step.description;
 
     const ratio = idx / (LEVELS.length - 1);
-    // Set on the form so the rail's fill div (a sibling of the input) can
-    // inherit the variable.
     this.element.style.setProperty("--slider-fill", ratio);
+
+    this._setSubmitEnabled(true);
   }
 
   _setSubmitEnabled(enabled) {
