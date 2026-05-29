@@ -66,7 +66,10 @@ export default class extends Controller {
     window.removeEventListener("scroll", this._onReflow);
     document.removeEventListener("keydown", this._onKey);
     document.removeEventListener("click", this._onDocumentClick, true);
-    document.removeEventListener("welcome-tour:dismiss", this._onExternalDismiss);
+    document.removeEventListener(
+      "welcome-tour:dismiss",
+      this._onExternalDismiss,
+    );
     this._clearWaitForTarget();
     if (this._previousOverflow !== undefined) {
       document.body.style.overflow = this._previousOverflow;
