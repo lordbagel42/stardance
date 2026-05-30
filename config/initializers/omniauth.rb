@@ -23,7 +23,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
         # after the user adds it via `/portal/address`. They were dropped in
         # 5/8/2026 (commit b085984e) by accident; restore so the shop
         # tutorial + order flow works.
-        scope: "openid email name profile verification_status slack_id address phone",
+        scope: "openid email name profile verification_status slack_id address basic_info",
         callback_path: "/oauth/callback",
         client_options: {
           site:         HCAService.host,

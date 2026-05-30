@@ -79,6 +79,7 @@ module Sessions
           last_name:           data["last_name"].to_s.strip,
           verification_status: data["verification_status"].to_s,
           ysws_eligible:       data["ysws_eligible"] == true,
+          birthday:            (Date.parse(data["birthday"].to_s) rescue nil),
           slack_id:            data["slack_id"].to_s,
           uid:                 data["id"].to_s
         }
@@ -136,11 +137,24 @@ module Sessions
       end
 
       def assign_user_attributes(user, fields, is_new_user)
-        user.email ||= fields[:email]
+        if user.email.present? && fields[:email].present? && user.email != fields[:email]
+          user.guest_email = user.email
+          user.email = fields[:email]
+        else
+          user.email ||= fields[:email]
+        end
+
         user.display_name = User.random_funny_display_name if user.display_name.to_s.strip.blank?
         user.first_name = fields[:first_name] if fields[:first_name].present?
         user.last_name = fields[:last_name] if fields[:last_name].present?
         user.slack_id = fields[:slack_id] if user.slack_id.to_s != fields[:slack_id]
+
+        if user.age_attestation.blank?
+          case hca_age_attestation(fields)
+          when :teen then user.age_attestation = "teen_13_18"
+          when :ineligible then user.age_attestation = "ineligible"
+          end
+        end
 
         if is_new_user && referral_code.present? && referral_code.length <= 64
           user.ref = referral_code
@@ -172,6 +186,21 @@ module Sessions
         fail_result(:identity_save_failed, "Unable to link your Hack Club account. Please contact support.")
       end
 
+      def age_from_birthday(birthday)
+        today = Date.current
+        age = today.year - birthday.year
+        age -= 1 if today < birthday + age.years
+        age
+      end
+
+      def hca_age_attestation(fields)
+        return :teen if fields[:ysws_eligible]
+        return nil if fields[:birthday].nil?
+
+        age = age_from_birthday(fields[:birthday])
+        age >= 13 && age <= 18 ? :teen : :ineligible
+      end
+
       def age_violation?(user, identity_data)
         user.age_attestation_teen_13_18? && hca_birthday_contradicts_teen?(identity_data)
       end
@@ -183,9 +212,7 @@ module Sessions
         birthday = Date.parse(birthday_str) rescue nil
         return false if birthday.nil?
 
-        today = Date.current
-        age = today.year - birthday.year
-        age -= 1 if today < birthday + age.years
+        age = age_from_birthday(birthday)
         age < 13 || age > 18
       end
 

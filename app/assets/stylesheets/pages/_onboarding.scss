@@ -132,6 +132,12 @@
     margin: 0 0 2rem;
   }
 
+  &__hint {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin: 0.5rem 0 0;
+  }
+
   &__body {
     font-size: 1rem;
     font-weight: 700;
@@ -643,11 +649,22 @@ $slider-star: url("onboarding/star-radio-active.svg");
 }
 
 @keyframes slider-jiggle {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px) rotate(-3deg); }
-  40% { transform: translateX(5px) rotate(2deg); }
-  60% { transform: translateX(-3px) rotate(-1deg); }
-  80% { transform: translateX(2px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px) rotate(-3deg);
+  }
+  40% {
+    transform: translateX(5px) rotate(2deg);
+  }
+  60% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  80% {
+    transform: translateX(2px);
+  }
 }
 
 .onboarding-experience__slider.jiggle {
@@ -1163,4 +1180,12 @@ $slider-star: url("onboarding/star-radio-active.svg");
   &__continue {
     margin-top: 1rem;
   }
+}
+
+.onboarding-guest-email__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
 }

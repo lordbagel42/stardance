@@ -16,7 +16,7 @@
     <%= form_with url: hack_club_auth_path(login_hint: current_user.email),
                    method: :post, local: true,
                    data: { turbo: false },
-                   html: { target: "_blank", rel: "noopener", class: "project-setup-link__form" } do %>
+                   html: { class: "project-setup-link__form" } do %>
       <%= render ActionButtonComponent.new(
             text: "Link or create Hack Club Account",
             variant: :primary,

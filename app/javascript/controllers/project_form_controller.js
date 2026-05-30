@@ -370,7 +370,8 @@ export default class extends Controller {
 
     const autofilled = this.readmeUrlTarget.dataset.autofilled === "true";
     const derivedFromRepo = this.readmeDerivedFromRepo(readmeValue);
-    this.userEditedReadme = readmeValue.length > 0 && !autofilled && !derivedFromRepo;
+    this.userEditedReadme =
+      readmeValue.length > 0 && !autofilled && !derivedFromRepo;
     this.setReadmeLocked(autofilled || derivedFromRepo);
   }
 
@@ -381,7 +382,11 @@ export default class extends Controller {
     if (!repoValue) return false;
 
     let url;
-    try { url = new URL(repoValue); } catch { return false; }
+    try {
+      url = new URL(repoValue);
+    } catch {
+      return false;
+    }
 
     const host = url.host.toLowerCase();
     const [, owner, rawRepo] = (url.pathname || "").split("/");
@@ -390,7 +395,9 @@ export default class extends Controller {
     const repo = rawRepo.replace(/\.git$/i, "");
 
     if (host === "github.com") {
-      return readmeValue.includes(`raw.githubusercontent.com/${owner}/${repo}/`);
+      return readmeValue.includes(
+        `raw.githubusercontent.com/${owner}/${repo}/`,
+      );
     } else if (host === "gitlab.com") {
       return readmeValue.includes(`gitlab.com/${owner}/${repo}/`);
     }

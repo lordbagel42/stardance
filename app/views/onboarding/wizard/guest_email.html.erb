@@ -1,0 +1,24 @@
+<% content_for :title, "Existing account" %>
+<main class="onboarding-screen onboarding-screen--guest-email" data-controller="onboarding-transition">
+  <div class="onboarding-screen__content">
+    <h1 class="onboarding-screen__title">Have you logged in before?</h1>
+    <p class="onboarding-screen__subhead">
+      It looks like this email was used on an account that later signed in with
+      <strong><%= @censored_hca_email %></strong>. Is that you?
+    </p>
+
+    <div class="onboarding-guest-email__actions">
+      <%= form_with url: onboarding_guest_email_yes_path, method: :post, data: { turbo: false } do %>
+        <button type="submit" class="action-btn action-btn--primary action-btn--large">
+          <span class="action-btn__label">Yes, that's me — sign in</span>
+        </button>
+      <% end %>
+
+      <%= form_with url: onboarding_guest_email_no_path, method: :post, data: { turbo: false } do %>
+        <button type="submit" class="action-btn action-btn--secondary action-btn--large">
+          <span class="action-btn__label">No, give me a new account</span>
+        </button>
+      <% end %>
+    </div>
+  </div>
+</main>
