@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_182421) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -352,7 +352,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.bigint "mission_id", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
+    t.index ["mission_id", "language"], name: "index_mission_guide_variants_unique_language", unique: true
     t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
   end
 
@@ -410,7 +410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.string "language", null: false
     t.bigint "mission_step_id", null: false
     t.datetime "updated_at", null: false
-    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
+    t.index ["mission_step_id", "language"], name: "index_mission_step_bodies_unique_language", unique: true
     t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
@@ -1073,6 +1073,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.string "experience_level"
     t.string "first_name"
     t.string "granted_roles", default: [], null: false, array: true
+    t.string "guest_email"
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
     t.string "hcb_email"
