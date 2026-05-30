@@ -42,6 +42,23 @@ module HCAService
     result&.dig("identity") || {}
   end
 
+  def email_known?(email)
+    return false if email.blank?
+
+    response = check_connection.get("/api/external/check") do |req|
+      req.params["email"] = email
+      req.headers["Accept"] = "application/json"
+    end
+
+    return false unless response.success?
+
+    result = JSON.parse(response.body)
+    result["result"] != "not_found"
+  rescue StandardError => e
+    Rails.logger.warn("HCA email check error: #{e.class}: #{e.message}")
+    false
+  end
+
   def portal_url(path, return_to:)
     uri = URI.join(host, "/portal/#{path}")
     uri.query = { return_to: return_to }.to_query
@@ -58,5 +75,12 @@ module HCAService
 
   def connection
     @connection ||= Faraday.new(url: host)
+  end
+
+  def check_connection
+    @check_connection ||= Faraday.new(url: host) do |f|
+      f.options.open_timeout = 3
+      f.options.timeout = 5
+    end
   end
 end

@@ -522,6 +522,9 @@ Rails.application.routes.draw do
     get  :interests_result,          to: "wizard#interests_result"
     get  :name,                      to: "wizard#name"
     post :name,                      to: "wizard#submit_name"
+    get  :guest_email,               to: "wizard#guest_email"
+    post :guest_email_yes,           to: "wizard#guest_email_yes"
+    post :guest_email_no,            to: "wizard#guest_email_no"
   end
 
   namespace :admin, constraints: AdminConstraint do

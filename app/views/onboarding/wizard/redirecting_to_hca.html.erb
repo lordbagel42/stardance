@@ -3,6 +3,9 @@
   <div class="onboarding-screen__content">
     <h1 class="onboarding-screen__title">Welcome back!</h1>
     <p class="onboarding-screen__subhead">Connecting you to your Hack Club account…</p>
+    <% if @nudge_email %>
+      <p class="onboarding-screen__hint">Next time, sign in directly with <strong><%= @nudge_email %></strong>.</p>
+    <% end %>
 
     <%= form_with url: hack_club_auth_path(login_hint: @login_hint),
                    method: :post, local: true,
