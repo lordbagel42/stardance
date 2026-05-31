@@ -5,7 +5,9 @@ class SessionsController < ApplicationController
     result = Sessions::HCALoginService.new(
       auth: request.env["omniauth.auth"],
       current_user: current_user,
-      referral_code: cookies[:referral_code]
+      referral_code: cookies[:referral_code],
+      ip_address: client_ip_address,
+      user_agent: request.user_agent
     ).call
 
     unless result.ok?
@@ -21,18 +23,26 @@ class SessionsController < ApplicationController
 
     return_to = safe_return_to(session.delete(:return_to))
 
+    if result.is_new_user
+      UserMailer.onboarding_start(result.user).deliver_later
+    end
+
     destination = if result.user.onboarded_at.nil? && result.user.age_attestation_ineligible?
       onboarding_age_gate_path
-    elsif return_to
-      return_to
+    elsif result.user.onboarded_at.nil? && result.is_new_user
+      onboarding_welcome_path
     elsif result.user.onboarded_at.nil?
       onboarding_resume_path(result.user)
+    elsif return_to
+      return_to
     elsif result.user.setup_complete?
       profile_projects_path(result.user.display_name)
     else
       home_path
     end
 
+    track_event "signed_up", { user_id: result.user.id } if result.is_new_user
+    track_event "hca_linked", { user_id: result.user.id } if result.is_new_user || result.guest_collision
     redirect_to destination, notice: "Signed in with Hack Club"
   end
 

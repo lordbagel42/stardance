@@ -1,50 +1,134 @@
-.reviewer-show {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: var(--space-xxl) clamp(20px, 2.4vw, 46px);
+// Individual ship review (admin/certification/ships#show). Dark "space" theme
+// matching the queue dashboard (_index.scss): a project-details column beside a
+// sticky verdict form. Reuses .status-pill and .action-btn.
+
+.ship-review {
+  --card-bg: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  --card-border: var(--color-space-border, rgba(255, 255, 255, 0.1));
+  --accent: var(--color-brand-highlight);
+  --muted: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+
+  color: var(--color-space-text);
+
+  &__back {
+    display: inline-block;
+    margin-bottom: var(--space-m);
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+  }
 
   &__header {
-    margin-bottom: var(--space-xl);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    margin-bottom: var(--space-l);
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
 
     h1 {
-      margin: 0 0 var(--space-xs);
-      font-size: var(--font-size-xxxl);
+      margin: 0;
+      font-size: 2rem;
       line-height: var(--line-height-headers);
     }
+  }
 
-    p {
-      margin: 0;
-      color: var(--color-text-muted);
-    }
+  // Progress banner, styled after .top-banner--beta but green to read as
+  // momentum rather than a warning. Re-renders on every page load, so the
+  // count pops as it ticks up after each verdict.
+  &__momentum {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-l);
+    padding: 0.6rem 1rem;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+  }
 
-    a {
-      color: var(--color-brand-highlight);
-      text-decoration: underline;
+  &__momentum-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    animation: ship-review-pop 460ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__momentum-count {
+      animation: none;
     }
   }
 
-  &__project {
+  &__id {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: 1fr minmax(320px, 420px);
+    gap: var(--space-l);
+    align-items: start;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__panel {
     padding: var(--space-l);
-    margin-bottom: var(--space-xl);
-    background: var(--color-card-bg, white);
-    border: 1px solid hsl(0, 0%, 88%);
-    border-radius: 8px;
-
-    h2 {
-      margin: 0 0 var(--space-s);
-      font-size: var(--font-size-xl);
-    }
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
   }
 
-  &__links {
+  &__panel-title {
+    margin: 0 0 var(--space-s);
+    font-size: var(--font-size-l);
+  }
+
+  &__description {
+    margin: 0;
+    line-height: var(--line-height-body);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__links,
+  &__meta {
     display: grid;
     grid-template-columns: max-content 1fr;
     gap: var(--space-xs) var(--space-m);
-    margin: var(--space-m) 0 0;
+    margin: 0;
 
     dt {
       font-weight: 600;
-      color: var(--color-text-muted);
+      color: var(--muted);
     }
 
     dd {
@@ -53,8 +137,17 @@
     }
 
     a {
-      color: var(--color-brand-highlight);
+      color: var(--accent);
       text-decoration: underline;
+    }
+  }
+
+  &__sidebar {
+    position: sticky;
+    top: var(--space-l);
+
+    @media (max-width: 900px) {
+      position: static;
     }
   }
 
@@ -64,27 +157,49 @@
     gap: var(--space-s);
     align-items: flex-start;
     padding: var(--space-l);
-    background: var(--color-card-bg, white);
-    border: 1px solid hsl(0, 0%, 88%);
-    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+
+    p {
+      margin: 0;
+      color: var(--muted);
+    }
   }
 }
 
+@keyframes ship-review-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.45);
+    text-shadow: 0 0 14px rgba(255, 255, 255, 0.85);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Verdict form (_form.html.erb), shown in the review sidebar.
 .review-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-l);
   padding: var(--space-l);
-  background: var(--color-card-bg, white);
-  border: 1px solid hsl(0, 0%, 88%);
-  border-radius: 8px;
+  color: var(--color-space-text);
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
 
   &__errors {
     padding: var(--space-s) var(--space-m);
-    color: hsl(0, 60%, 30%);
-    background: hsl(0, 80%, 96%);
-    border: 1px solid hsl(0, 60%, 80%);
-    border-radius: 6px;
+    color: var(--color-brand-salmon);
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    border-radius: 8px;
 
     ul {
       padding-left: var(--space-l);
@@ -128,15 +243,150 @@
       padding: var(--space-s);
       font-family: inherit;
       font-size: var(--font-size-m);
+      color: var(--color-space-text);
+      background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
       resize: vertical;
-      border: 1px solid hsl(0, 0%, 80%);
-      border-radius: 6px;
+      border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.18));
+      border-radius: 8px;
+
+      &:focus-visible {
+        outline: 2px solid var(--color-brand-highlight);
+        outline-offset: 1px;
+      }
     }
   }
 
   &__actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-s);
+  }
+
+  &__current {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+
+    a {
+      color: var(--color-brand-highlight);
+    }
+  }
+
+  &__back {
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+    }
+  }
+}
+
+// Drag-and-drop zone for the verdict walkthrough video.
+.video-drop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  padding: var(--space-m);
+  background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
+  border: 1px dashed var(--color-space-border, rgba(255, 255, 255, 0.28));
+  border-radius: 8px;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+
+  &--over {
+    border-color: var(--color-brand-highlight);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  &--accepted {
+    border-style: solid;
+    border-color: #22c55e;
+  }
+
+  &--error {
+    border-color: var(--color-brand-salmon);
+  }
+
+  // The input still drives the upload; we hide it and open it from the prompt.
+  &__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  &__prompt {
+    padding: var(--space-l) var(--space-m);
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+    }
+  }
+
+  // display:flex would override the browser's [hidden] rule, so the empty
+  // preview would show before a file is picked. Keep it gone until then.
+  &__preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__video {
+    width: 100%;
+    max-height: 240px;
+    background: #000;
+    border-radius: 6px;
+  }
+
+  &__filename {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  &__replace {
+    align-self: flex-start;
+    padding: 0;
+    color: var(--color-brand-highlight);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+  }
+
+  // Empty until the controller reports an accepted file or a rejection.
+  &__status {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+
+    .video-drop--accepted & {
+      color: #22c55e;
+    }
+
+    .video-drop--error & {
+      color: var(--color-brand-salmon);
+    }
   }
 }

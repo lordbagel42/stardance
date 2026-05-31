@@ -95,8 +95,20 @@
   background: rgba(217, 217, 217, 0.18);
   border-radius: 8px;
   color: var(--color-space-text);
+  display: block;
   min-height: 48px;
   padding: 0.6rem 0.75rem;
+
+  &--link {
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(217, 217, 217, 0.26);
+      outline: 2px solid var(--color-brand-mint);
+      outline-offset: 2px;
+    }
+  }
 }
 
 .discover-rail__card-title {

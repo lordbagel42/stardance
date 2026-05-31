@@ -4,10 +4,12 @@ module Sessions
       def ok? = status == :ok
     end
 
-    def initialize(auth:, current_user:, referral_code: nil)
+    def initialize(auth:, current_user:, referral_code: nil, ip_address: nil, user_agent: nil)
       @auth = auth
       @current_user = current_user
       @referral_code = referral_code
+      @ip_address = ip_address
+      @user_agent = user_agent
     end
 
     def call
@@ -34,6 +36,10 @@ module Sessions
         return failure
       end
 
+      if user.age_attestation_ineligible?
+        return age_ineligible_result(user, is_new_user, guest_collision)
+      end
+
       identity.user = user
       if (failure = save_identity(identity, user))
         return failure
@@ -41,15 +47,11 @@ module Sessions
 
       user.apply_hca_verification_payload!(identity_data)
 
-      if age_violation?(user, identity_data)
-        return age_violation_result(user, identity, identity_data, fields, is_new_user)
-      end
-
       success_result(user, is_new_user, guest_collision)
     end
 
     private
-      attr_reader :auth, :current_user, :referral_code
+      attr_reader :auth, :current_user, :referral_code, :ip_address, :user_agent
 
       def valid_provider?
         # provider is a symbol. do not change it to string... equality will fail otherwise
@@ -149,15 +151,18 @@ module Sessions
         user.last_name = fields[:last_name] if fields[:last_name].present?
         user.slack_id = fields[:slack_id] if user.slack_id.to_s != fields[:slack_id]
 
-        if user.age_attestation.blank?
-          case hca_age_attestation(fields)
-          when :teen then user.age_attestation = "teen_13_18"
-          when :ineligible then user.age_attestation = "ineligible"
-          end
+        case hca_age_attestation(fields)
+        when :teen then user.age_attestation = "teen_13_18"
+        when :ineligible then user.age_attestation = "ineligible"
         end
 
-        if is_new_user && referral_code.present? && referral_code.length <= 64
+        if (is_new_user || user.ref.blank?) && referral_code.present? && referral_code.length <= 64
           user.ref = referral_code
+        end
+
+        if is_new_user
+          user.ip_address = ip_address
+          user.user_agent = user_agent
         end
       end
 
@@ -201,34 +206,12 @@ module Sessions
         age >= 13 && age <= 18 ? :teen : :ineligible
       end
 
-      def age_violation?(user, identity_data)
-        user.age_attestation_teen_13_18? && hca_birthday_contradicts_teen?(identity_data)
-      end
-
-      def hca_birthday_contradicts_teen?(identity_data)
-        birthday_str = identity_data["birthday"].to_s
-        return false if birthday_str.blank?
-
-        birthday = Date.parse(birthday_str) rescue nil
-        return false if birthday.nil?
-
-        age = age_from_birthday(birthday)
-        age < 13 || age > 18
-      end
-
-      def age_violation_result(user, identity, identity_data, fields, is_new_user)
-        user.update!(age_attestation: "ineligible")
-        identity.destroy
-        Sentry.capture_message(
-          "HCA birthday contradicts teen attestation; identity removed",
-          level: :warning,
-          extra: { user_id: user.id, hca_birthday: identity_data["birthday"], slack_id: fields[:slack_id] }
-        )
+      def age_ineligible_result(user, is_new_user, guest_collision)
         Result.new(
           status: :age_violation,
           user: user,
           is_new_user: is_new_user,
-          guest_collision: false,
+          guest_collision: guest_collision,
           alert: "We weren't able to verify your age. Please try again later."
         )
       end

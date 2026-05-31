@@ -18,6 +18,7 @@ class IdvSetupCardComponent < ViewComponent::Base
   end
 
   def status_eyebrow
+    return "account needed" if needs_hca_link?
     return "not eligible for prizes" if ysws_ineligible?
 
     case user.verification_status
@@ -28,6 +29,7 @@ class IdvSetupCardComponent < ViewComponent::Base
   end
 
   def title
+    return "Link your Hack Club Account first." if needs_hca_link?
     return "You're verified, but not eligible for YSWS yet." if ysws_ineligible?
 
     case user.verification_status
@@ -37,11 +39,18 @@ class IdvSetupCardComponent < ViewComponent::Base
     end
   end
 
+  def needs_hca_link?   = !user.hca_linked?
   def pending?          = user.verification_pending?
   def ineligible?       = user.verification_ineligible?
   def ysws_ineligible?  = user.identity_verified? && !user.ysws_eligible?
 
   def verify_url
-    HCAService.verify_portal_url(return_to: return_to.presence || helpers.request.original_url)
+    base = return_to.presence || helpers.request.original_url
+    return_with_status = if base.include?("?")
+      "#{base}&portal_status=1"
+    else
+      "#{base}?portal_status=1"
+    end
+    HCAService.verify_portal_url(return_to: return_with_status)
   end
 end

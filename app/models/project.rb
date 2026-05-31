@@ -39,8 +39,10 @@ require "net/http"
 class Project < ApplicationRecord
   include AASM
   include SoftDeletable
+  include SemanticSearchIndexable
 
   has_ferret_search :title, :description
+  semantic_search_indexable type: "project"
 
   has_paper_trail
 
@@ -201,14 +203,6 @@ class Project < ApplicationRecord
     shipped_at.present? || !draft?
   end
 
-  def restore!
-    update!(deleted_at: nil)
-  end
-
-  def deleted?
-    deleted_at.present?
-  end
-
   def display_description
     description.to_s
   end
@@ -229,6 +223,15 @@ class Project < ApplicationRecord
     (total_seconds / 3600.0).round(1)
   end
 
+  def seconds_coded_in_devlog_window(hackatime_uid, at: Time.current)
+    HackatimeService.fetch_total_seconds_for_projects(
+      hackatime_uid,
+      hackatime_keys,
+      start_date: devlog_window_start(at).iso8601,
+      end_date: at.iso8601
+    )
+  end
+
   aasm column: :ship_status do
     state :draft, initial: true
     state :submitted
@@ -240,8 +243,7 @@ class Project < ApplicationRecord
     event :submit_for_review do
       transitions from: [ :draft, :submitted, :under_review, :needs_changes, :approved, :rejected ], to: :submitted, guard: :shippable?
       after do
-        self.shipped_at = Time.current
-        ship_reviews.find_or_create_by!(status: :pending)
+        self.shipped_at = Time.current # I moved this logic to the ships controller as there's differences in how we handle reships - @AVD
       end
     end
 
@@ -507,6 +509,11 @@ class Project < ApplicationRecord
   end
 
   private
+
+  def devlog_window_start(at)
+    previous_devlog = devlogs.where("post_devlogs.created_at < ?", at).order("post_devlogs.created_at desc").first
+    previous_devlog&.created_at || [ created_at, Date.parse(HackatimeService::START_DATE).beginning_of_day ].min
+  end
 
   def previous_ship_event_has_payout?
     return true if last_ship_event.nil?

@@ -218,14 +218,14 @@
         </button>
         <script>
           document.getElementById("set-vote-bal").addEventListener("click", function() {
-            var v = prompt(<%== @user.display_name.to_json %> + ": Set vote balance:", "0");
+            var v = prompt(<%= @user.display_name.to_json %> + ": Set vote balance:", "0");
             if (v === null) return;
             var n = parseInt(v, 10);
             if (isNaN(n)) { alert("not valid number"); return; }
             var f = document.createElement("form");
             f.method = "post";
-            f.action = <%== admin_user_vote_balance_path(@user).to_json %>;
-            f.innerHTML = '<input type="hidden" name="authenticity_token" value="' + <%== form_authenticity_token.to_json %> + '">' +
+            f.action = <%= admin_user_vote_balance_path(@user).to_json %>;
+            f.innerHTML = '<input type="hidden" name="authenticity_token" value="' + <%= form_authenticity_token.to_json %> + '">' +
               '<input type="hidden" name="_method" value="patch">' +
               '<input type="hidden" name="vote_balance" value="' + n + '">';
             document.body.appendChild(f);

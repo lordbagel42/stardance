@@ -70,7 +70,10 @@
   <div class="sidebar__user" aria-live="polite">
     <div class="sidebar__user-card">
       <div class="sidebar__user-meta">
-        <span class="sidebar__user-meta-label">logged in as</span>
+        <div class="sidebar__user-balance">
+          <%= helpers.stardust_icon(extra_class: "sidebar__user-balance-icon") %>
+          <span class="sidebar__user-balance-amount"><%= number_with_delimiter(user.cached_balance) %></span>
+        </div>
         <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
           @<%= user.display_name %>
         <% end %>
@@ -100,14 +103,6 @@
         <%= text_field_tag :hcb_email, user.hcb_email, id: "hcb_email", class: "settings-form__input", placeholder: user.email, autocomplete: "email" %>
         <small class="settings-form__hint">Email used for receiving HCB grants. Leave blank to use your default
           email.</small>
-      </div>
-
-      <div class="settings-form__field">
-        <label class="settings-form__checkbox">
-          <%= check_box_tag :send_votes_to_slack, "1", preference.send_votes_to_slack, id: "send_votes_to_slack" %>
-          <span>Send votes to Slack</span>
-        </label>
-        <small class="settings-form__hint">Share your votes in #stardance-share-votes</small>
       </div>
 
       <div class="settings-form__field">

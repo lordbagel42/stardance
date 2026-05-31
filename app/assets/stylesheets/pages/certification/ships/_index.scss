@@ -1,82 +1,607 @@
-.reviewer-queue {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: var(--space-xxl) clamp(20px, 2.4vw, 46px);
+// Reviewer queue dashboard (admin/certification/ships#index). Dark "space"
+// theme to match the rest of the signed-in app — see mission_submissions for
+// the sibling pattern. Layout mirrors the Shipwrights sw-dash queue: a stats
+// + leaderboard overview, a filter bar, and the queue table.
+
+.ship-queue {
+  --card-bg: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  --card-border: var(--color-space-border, rgba(255, 255, 255, 0.1));
+  --accent: var(--color-brand-highlight);
+  --muted: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+  --positive: #4ade80;
+  --negative: #f87171;
+
+  color: var(--color-space-text);
+
+  &__back {
+    display: inline-block;
+    margin-bottom: var(--space-m);
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+  }
 
   &__header {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-s);
-    margin-bottom: var(--space-xl);
-
-    h1 {
-      margin: 0;
-      font-size: var(--font-size-xxxl);
-      line-height: var(--line-height-headers);
-    }
-
-    p {
-      margin: 0;
-      color: var(--color-text-muted);
-    }
-
-    .btn {
-      align-self: flex-start;
-    }
-  }
-
-  &__empty {
-    padding: var(--space-xl);
-    color: var(--color-text-muted);
-    text-align: center;
-    background: var(--color-card-bg, hsl(0, 0%, 98%));
-    border: 1px dashed var(--color-text-muted);
-    border-radius: 8px;
-  }
-
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-s);
-    padding: 0;
-    margin: 0;
-    list-style: none;
-  }
-
-  &__item {
-    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-m);
-    padding: var(--space-m) var(--space-l);
-    background: var(--color-card-bg, white);
-    border: 1px solid hsl(0, 0%, 88%);
-    border-radius: 8px;
+    margin-bottom: var(--space-l);
   }
 
-  &__item-main {
+  &__title {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
+    align-items: center;
+    gap: var(--space-s);
 
-    strong {
-      font-size: var(--font-size-l);
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: var(--line-height-headers);
     }
   }
 
-  &__item-meta {
-    font-size: var(--font-size-s);
-    color: var(--color-text-muted);
+  // Shared card chrome.
+  &__stats,
+  &__leaderboard,
+  &__filters,
+  &__table-wrap,
+  &__card,
+  &__empty {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
   }
 
-  &__item-status {
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: var(--space-xxs);
+  }
+
+  // --- Overview: stats + leaderboard -------------------------------------
+  &__overview {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: var(--space-m);
+    margin-bottom: var(--space-l);
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__stats {
+    padding: var(--space-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__progress-headline {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__net {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+
+  &__progress-note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  &__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-l);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--card-border);
+  }
+
+  &__metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__metric-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+
+  &__metric-link {
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.1);
+    }
+  }
+
+  &__metric-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  &__alltime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-m);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--card-border);
+    font-size: 0.9rem;
+  }
+
+  &__tally {
+    color: var(--muted);
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+
+  &__leaderboard {
+    padding: var(--space-m) var(--space-l) var(--space-l);
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__leaderboard-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    margin-bottom: var(--space-s);
+
+    h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+  }
+
+  &__tabs {
+    display: flex;
+    gap: var(--space-xxs);
+  }
+
+  &__tab {
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      border-color 150ms ease,
+      background 150ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+
+    &.is-active {
+      color: var(--color-set-1-bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+  }
+
+  &__ranks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
+  &__ranks-empty {
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: var(--space-s) 0;
+  }
+
+  &__rank {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr auto;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    border-radius: 8px;
+    font-size: 0.95rem;
+
+    &:nth-child(odd) {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    // Medal accents for the podium.
+    &:nth-child(1) .ship-queue__rank-pos {
+      color: #fbbf24;
+    }
+
+    &:nth-child(2) .ship-queue__rank-pos {
+      color: #d1d5db;
+    }
+
+    &:nth-child(3) .ship-queue__rank-pos {
+      color: #d8a47f;
+    }
+  }
+
+  &__rank-pos {
+    font-weight: 700;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__rank-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__rank-count {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // --- Filters -----------------------------------------------------------
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-m);
+    padding: var(--space-m) var(--space-l);
+    margin-bottom: var(--space-l);
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: var(--space-xxs);
+    }
+  }
+
+  &__filter {
+    display: flex;
+    flex-direction: column;
+
+    &--search {
+      flex: 1 1 220px;
+    }
+  }
+
+  &__select,
+  &__input {
+    padding: var(--space-xs) var(--space-s);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--color-space-bg-2, rgba(0, 0, 0, 0.3));
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    color-scheme: dark;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+  }
+
+  &__input {
+    width: 100%;
+  }
+
+  &__filter-actions {
     display: flex;
     align-items: center;
     gap: var(--space-s);
   }
 
-  &__claimed {
-    font-size: var(--font-size-s);
-    color: var(--color-text-muted);
+  &__reset {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+  }
+
+  // --- Table -------------------------------------------------------------
+  &__table-wrap {
+    overflow-x: auto;
+
+    @media (max-width: 720px) {
+      display: none;
+    }
+  }
+
+  &__table {
+    // Grid lines are intentionally stronger than --card-border (which is near
+    // invisible on the dark bg) so the table reads as a crisp grid.
+    --grid-line: rgba(255, 255, 255, 0.2);
+
+    width: 100%;
+    table-layout: fixed; // lock column widths so Status/action don't shift per filter
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    thead th {
+      text-align: left;
+      padding: var(--space-s) var(--space-m);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.32);
+      border-right: 1px solid var(--grid-line);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: var(--space-s) var(--space-m);
+      border-bottom: 1px solid var(--grid-line);
+      border-right: 1px solid var(--grid-line);
+      vertical-align: top;
+    }
+
+    thead th:last-child,
+    tbody td:last-child {
+      border-right: 0;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  &__cell-project {
+    min-width: 240px;
+  }
+
+  &__project-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs);
+  }
+
+  // Submitter, relative age, and the claim flag all share one meta line under
+  // the project title — keeps the table to three columns with no dead space.
+  &__project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xxs);
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  &__dot {
+    color: var(--muted);
+  }
+
+  &__claim-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    &--open {
+      background: rgba(74, 222, 128, 0.18);
+      color: #4ade80;
+    }
+
+    &--locked {
+      background: rgba(248, 113, 113, 0.18);
+      color: #f87171;
+    }
+  }
+
+  &__claim-flag-icon {
+    flex-shrink: 0;
+    width: 0.85em;
+    height: 0.85em;
+    fill: currentColor;
+  }
+
+  &__claim-by {
+    font-weight: 600;
+  }
+
+  // Fixed widths so Status and the action button stay put on every row and
+  // every filter; Project is the only flexible column and absorbs the rest.
+  &__cell-status {
+    width: 130px;
+    white-space: nowrap;
+  }
+
+  &__cell-action {
+    width: 120px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__project-title {
+    color: var(--color-space-text);
+    font-weight: 600;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+  }
+
+  // Pagy series_nav renders <nav class="pagy series-nav"> with <a> links; the
+  // current page and gaps are marked with aria attributes, not classes.
+  &__pagination {
+    margin-top: var(--space-l);
+
+    .pagy {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--space-xxs);
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 var(--space-xs);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--color-space-text);
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+      text-decoration: none;
+      transition:
+        border-color 150ms ease,
+        color 150ms ease;
+    }
+
+    a[href]:hover,
+    a[href]:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    a[aria-current="page"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--color-set-1-bg, #1a1633);
+      font-weight: 700;
+    }
+
+    a[aria-disabled="true"]:not([aria-current="page"]) {
+      color: var(--muted);
+      border-color: transparent;
+      cursor: default;
+    }
+  }
+
+  &__project-id {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__muted {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  &__countdown {
+    font-variant-numeric: tabular-nums;
+
+    &.is-expired {
+      color: var(--negative);
+    }
+  }
+
+  // --- Mobile cards ------------------------------------------------------
+  &__cards {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-s);
+
+    @media (max-width: 720px) {
+      display: flex;
+    }
+  }
+
+  &__card {
+    display: block;
+    padding: var(--space-m);
+    text-decoration: none;
+    color: var(--color-space-text);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+    }
+  }
+
+  &__card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin-bottom: var(--space-xs);
+  }
+
+  &__card-claim {
+    margin-top: var(--space-xs);
+  }
+
+  // --- Empty state -------------------------------------------------------
+  &__empty {
+    padding: var(--space-xl);
+    text-align: center;
+    color: var(--muted);
   }
 }

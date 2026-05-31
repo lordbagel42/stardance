@@ -7,20 +7,35 @@
     <% when "none" %>
       <h1 class="onboarding-screen__title">
         No experience? Don't worry!<br>
-        <%= onboarding_count_up(6203) %> other people are also beginners.
+        <% if @peer_count >= 10 %>
+          <%= onboarding_count_up(@peer_count) %> other people are also beginners.
+        <% else %>
+          Plenty of others are also beginners.
+        <% end %>
       </h1>
       <p class="onboarding-screen__subhead">
         We'll have plenty of guides to get you started, and a community to help!
       </p>
     <% when "little" %>
-      <h1 class="onboarding-screen__title">A little bit counts! <%= onboarding_count_up(2000) %> others are at this stage too :)</h1>
+      <h1 class="onboarding-screen__title">
+        A little bit counts!
+        <% if @peer_count >= 10 %>
+          <%= onboarding_count_up(@peer_count) %> others are at this stage too :)
+        <% else %>
+          A bunch of others are at this stage too :)
+        <% end %>
+      </h1>
       <p class="onboarding-screen__subhead">
         We'll help you go from "I sort of remember this" to "I built that." with our project guides and community help!
       </p>
     <% when "some" %>
       <h1 class="onboarding-screen__title">
         You're in a great spot,<br>
-        <%= onboarding_count_up(2756) %> others are here with you too!
+        <% if @peer_count >= 10 %>
+          <%= onboarding_count_up(@peer_count) %> others are here with you too!
+        <% else %>
+          a bunch of others are here with you too!
+        <% end %>
       </h1>
       <p class="onboarding-screen__subhead">
         Check out our guides for more ideas, or view people's projects in the community and get inspired.

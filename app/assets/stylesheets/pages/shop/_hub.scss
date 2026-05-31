@@ -11,7 +11,7 @@
 
   &__tutorial-card {
     background: rgba(217, 217, 217, 0.1);
-    border: 2px solid var(--color-brand-salmon);
+    border: 2px solid var(--color-brand-highlight);
     border-radius: 16px;
     margin: 0 0 2.5rem;
     padding: 1.75rem 2rem 1rem;
@@ -34,6 +34,71 @@
     font-size: 1rem;
     margin: 0;
     opacity: 0.8;
+  }
+
+  &__tutorial-card--preview {
+    border-color: var(--color-brand-highlight);
+  }
+
+  &__progress-list {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+  }
+
+  &__progress-item {
+    align-items: center;
+    color: var(--color-space-text);
+    display: flex;
+    font-size: 0.95rem;
+    font-weight: 600;
+    gap: 0.5rem;
+
+    &--done {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+  }
+
+  &__progress-check {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 700;
+    height: 24px;
+    justify-content: center;
+    width: 24px;
+
+    .shop-hub__progress-item--done & {
+      background: var(--color-brand-highlight);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  &__progress-link {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--color-brand-highlight);
+    cursor: pointer;
+    font: inherit;
+    font-weight: inherit;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  &__progress-form {
+    display: inline;
+    margin: 0;
+  }
+
+  &__picks--locked {
+    opacity: 0.5;
+    pointer-events: none;
   }
 
   &__layout {

@@ -28,8 +28,8 @@ class SidebarComponent < ViewComponent::Base
     items = [
       { slug: "home",          label: "home",          path: helpers.home_path,
         icon: { idle: "rocket", active: "rocket_active" } },
-      { slug: "notifications", label: "notifications", path: "#",
-        icon: { idle: "bell", active: "bell_active" } },
+      # { slug: "notifications", label: "notifications", path: "#",
+      #   icon: { idle: "bell", active: "bell_active" } },
       { slug: "rate",          label: "rate",          path: helpers.new_rate_path,
         icon: { idle: "box", active: "box_active" },
         locked: !user.shipped_projects.exists?,

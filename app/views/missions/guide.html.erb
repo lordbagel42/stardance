@@ -19,6 +19,22 @@
         <h1 class="mission-guide__title"><%= @mission.name %></h1>
       </header>
 
+      <% if current_user && current_user.hackatime_identity.blank? %>
+        <aside class="guide-callout guide-callout--warning">
+          <p class="guide-callout__title">Hackatime isn't linked yet</p>
+          <div class="guide-callout__body">
+            <p style="margin-bottom: var(--space-s)">You need to link Hackatime to track your coding time. Without it, your hours won't count toward shipping.</p>
+            <%= button_to "/auth/hackatime",
+                          method: :post,
+                          params: { origin: request.fullpath },
+                          class: "action-btn action-btn--small action-btn--primary",
+                          form: { style: "display: inline" } do %>
+              Link Hackatime →
+            <% end %>
+          </div>
+        </aside>
+      <% end %>
+
       <div class="mission-guide__layout">
         <% if @guide_outline.any? %>
           <aside class="mission-guide__sidebar" aria-label="Guide progress">

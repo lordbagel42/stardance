@@ -447,11 +447,13 @@
         </nav>
       <% end %>
 
-      <%= button_to "Add 15min (test)",
-                    add_test_time_project_path(@project),
-                    method: :post,
-                    class: "action-btn action-btn--large action-btn--secondary project-show__test-time",
-                    form: { class: "project-show__test-time-form" } %>
+      <% if Flipper.enabled?(:test_time, current_user) %>
+        <%= button_to "Add 15min (test)",
+                      add_test_time_project_path(@project),
+                      method: :post,
+                      class: "action-btn action-btn--large action-btn--secondary project-show__test-time",
+                      form: { class: "project-show__test-time-form" } %>
+      <% end %>
     <% end %>
 
     <% if is_member && params[:just_shipped].present? %>
@@ -511,11 +513,20 @@
       <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
         <header class="project-show__onboarding-header">
           <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
-          <p class="project-show__onboarding-header-body">
-            Your devlogs will appear here. But first, set up Hackatime to start working on your project.
-          </p>
+          <% if !@hackatime_linked %>
+            <p class="project-show__onboarding-header-body">
+              Link Hackatime to start tracking your time. Once you do and post a devlog, you'll unlock free stickers in the shop!
+            </p>
+          <% elsif current_user && !current_user.shop_tutorial_completed? %>
+            <p class="project-show__onboarding-header-body">
+              Hackatime is linked! Post a devlog and head to the <a href="/shop" class="project-show__onboarding-header-link">shop tab</a> to claim your free stickers.
+            </p>
+          <% else %>
+            <p class="project-show__onboarding-header-body">
+              Your devlogs will appear here. Start coding and post your first devlog!
+            </p>
+          <% end %>
         </header>
-
       </section>
     <% end %>
 

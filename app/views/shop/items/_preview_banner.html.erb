@@ -1,0 +1,82 @@
+<% if @preview_tutorial_items&.values&.all?(&:present?) %>
+  <%
+    step1_done = current_user&.hca_linked? && current_user&.projects&.exists?
+    step2_done = step1_done && current_user&.hackatime_identity&.present?
+    step3_done = step2_done && current_user&.identity_submitted?
+    step4_done = step3_done && Post.where(user: current_user, postable_type: "Post::Devlog").exists?
+    first_project = current_user&.projects&.first
+  %>
+  <section class="shop-hub__tutorial-card shop-hub__tutorial-card--preview" aria-label="Free stickers">
+    <div class="shop-hub__tutorial-card-header">
+      <h2 class="shop-hub__tutorial-card-title">Get free stickers!</h2>
+      <p class="shop-hub__tutorial-card-subtitle">Complete these steps to unlock the shop tutorial and claim your free stickers :)</p>
+      <div class="shop-hub__progress-list">
+        <div class="shop-hub__progress-item <%= 'shop-hub__progress-item--done' if step1_done %>">
+          <span class="shop-hub__progress-check"><%= step1_done ? "✓" : "1" %></span>
+          <% if step1_done %>
+            Create a project
+          <% elsif current_user %>
+            <%= link_to "Create a project", new_project_path, class: "shop-hub__progress-link" %>
+          <% else %>
+            Create a project
+          <% end %>
+        </div>
+        <div class="shop-hub__progress-item <%= 'shop-hub__progress-item--done' if step2_done %>">
+          <span class="shop-hub__progress-check"><%= step2_done ? "✓" : "2" %></span>
+          <% if step2_done %>
+            Link Hackatime
+          <% elsif step1_done && current_user %>
+            <%= button_to "Link Hackatime", "/auth/hackatime", method: :post, params: { origin: request.fullpath }, class: "shop-hub__progress-link", form: { class: "shop-hub__progress-form" } %>
+          <% else %>
+            Link Hackatime
+          <% end %>
+        </div>
+        <div class="shop-hub__progress-item <%= 'shop-hub__progress-item--done' if step3_done %>">
+          <span class="shop-hub__progress-check"><%= step3_done ? "✓" : "3" %></span>
+          <% if step3_done %>
+            Verify your identity
+          <% elsif step2_done && current_user %>
+            <%= button_to "Verify your identity", my_verification_refresh_path(idv_check: 1), method: :post, class: "shop-hub__progress-link", form: { class: "shop-hub__progress-form" } %>
+          <% else %>
+            Verify your identity
+          <% end %>
+        </div>
+        <div class="shop-hub__progress-item <%= 'shop-hub__progress-item--done' if step4_done %>">
+          <span class="shop-hub__progress-check"><%= step4_done ? "✓" : "4" %></span>
+          <% if step4_done %>
+            Post a devlog
+          <% elsif step3_done && first_project %>
+            <%= link_to "Post a devlog", project_path(first_project), class: "shop-hub__progress-link" %>
+          <% else %>
+            Post a devlog
+          <% end %>
+        </div>
+      </div>
+      <% unless current_user %>
+        <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "shop-hub__progress-form" do %>
+          <%= render ActionButtonComponent.new(
+                text: "Sign in to get started",
+                variant: :primary,
+                size: :large,
+                type: :submit
+              ) %>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="shop-hub__picks shop-hub__picks--locked">
+      <ul class="shop-hub__picks-row">
+        <% [@preview_tutorial_items[:stickers], @preview_tutorial_items[:nothing]].compact.each do |item| %>
+          <li class="shop-hub__items-card">
+            <%= render "shop/items/item_card",
+                  item: item,
+                  mode: :preview,
+                  region: @user_region,
+                  balance: 0,
+                  tutorial_item_ids: [],
+                  spotlight: false %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </section>
+<% end %>

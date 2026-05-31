@@ -7,20 +7,48 @@
       <h1 class="onboarding-screen__title">That's alright!</h1>
       <p class="onboarding-screen__subhead">We'll figure it out together :D</p>
     <% else %>
-      <h1 class="onboarding-screen__title"><%= onboarding_count_up(2734) %> other teens like that too!</h1>
-      <p class="onboarding-screen__subhead">and <%= onboarding_count_up(820) %> of them are also beginners!</p>
-
-      <div class="onboarding-interests-result__featured" aria-label="Featured projects">
-        <% 5.times do |i| %>
-          <div class="onboarding-interests-result__featured-card"></div>
+      <h1 class="onboarding-screen__title">
+        <% if @peer_count >= 10 %>
+          <%= onboarding_count_up(@peer_count) %> other teens like that too!
+        <% else %>
+          A bunch of other teens like that too!
         <% end %>
-      </div>
+      </h1>
+      <p class="onboarding-screen__subhead">
+        <% if @beginner_peer_count >= 10 %>
+          and <%= onboarding_count_up(@beginner_peer_count) %> of them are also beginners!
+        <% else %>
+          and plenty of them are also beginners!
+        <% end %>
+      </p>
+
+      <% if @featured_projects.present? %>
+        <div class="onboarding-interests-result__featured" aria-label="Featured projects">
+          <% @featured_projects.each do |project| %>
+            <a href="<%= project.url %>" target="_blank" rel="noopener noreferrer" class="onboarding-interests-result__featured-card">
+              <%= image_tag project.thumbnail_url, alt: project.title, class: "onboarding-interests-result__featured-img", loading: "lazy" %>
+              <div class="onboarding-interests-result__featured-info">
+                <strong class="onboarding-interests-result__featured-title"><%= project.title %></strong>
+                <span class="onboarding-interests-result__featured-meta"><%= project.age %>yo from <%= project.location %></span>
+              </div>
+            </a>
+          <% end %>
+        </div>
+      <% end %>
 
       <p class="onboarding-interests-result__prize-label">and they're getting prizes like</p>
-      <div class="onboarding-interests-result__prizes" aria-hidden="true">
-        <%# v1 ships with placeholder boxes; curated photos go in app/assets/images/onboarding/prizes/ once extracted from Figma %>
-        <% 5.times do |i| %>
-          <div class="onboarding-interests-result__prize onboarding-interests-result__prize--<%= i %>"></div>
+      <div class="onboarding-interests-result__prizes">
+        <% [
+          ["onboarding/prizes/bambu-a1-mini.png", "Bambu A1 Mini"],
+          ["onboarding/prizes/framework-laptop.png", "Framework Laptop"],
+          ["onboarding/prizes/ipad.png", "Apple iPad"],
+          ["onboarding/prizes/raspberry-pi-5.png", "Raspberry Pi 5"],
+          ["onboarding/prizes/meta-quest-3.png", "Meta Quest 3"],
+        ].each_with_index do |(src, label), i| %>
+          <div class="onboarding-interests-result__prize-item onboarding-interests-result__prize--<%= i %>">
+            <%= image_tag src, alt: label, class: "onboarding-interests-result__prize-img", loading: "lazy" %>
+            <span class="onboarding-interests-result__prize-name"><%= label %></span>
+          </div>
         <% end %>
       </div>
     <% end %>
@@ -29,7 +57,7 @@
           text: "Next",
           variant: :primary,
           size: :large,
-          href: onboarding_name_path,
+          href: onboarding_referral_path,
           icon: "icons/right-arrow.svg",
           data: { action: "click->onboarding-transition#leave" }
         ) %>

@@ -25,6 +25,15 @@ application.register(
   Certification__Ysws__DevlogTimeChartController,
 );
 
+import Certification__QueueController from "./certification/queue_controller";
+application.register("certification--queue", Certification__QueueController);
+
+import Certification__VideoDropController from "./certification/video_drop_controller";
+application.register(
+  "certification--video-drop",
+  Certification__VideoDropController,
+);
+
 import Certification__Ysws__FraudReportController from "./certification/ysws/fraud_report_controller";
 application.register(
   "certification--ysws--fraud-report",
@@ -69,6 +78,9 @@ application.register("customs-warning", CustomsWarningController);
 
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
+
+import DiscoverRailSearchController from "./discover_rail_search_controller";
+application.register("discover-rail-search", DiscoverRailSearchController);
 
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
@@ -141,6 +153,9 @@ application.register("parallax", ParallaxController);
 
 import PrizeFloatController from "./prize_float_controller";
 application.register("prize-float", PrizeFloatController);
+
+import PostMenuController from "./post_menu_controller";
+application.register("post-menu", PostMenuController);
 
 import ProfileEditController from "./profile_edit_controller";
 application.register("profile-edit", ProfileEditController);

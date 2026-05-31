@@ -70,16 +70,20 @@ class ProjectsController < ApplicationController
     end
 
 
-    load_posts = -> {
-      @project.posts
-               .visible_to(current_user)
-               .includes(postable: [ :attachments_attachments ])
-               .order(created_at: :desc)
-               .select { |post| post.postable.present? }
+    load_posts = ->(include_deleted_devlogs: false) {
+      scope = @project.posts
+                       .visible_to(current_user)
+                       .includes(postable: [ :attachments_attachments ])
+                       .order(created_at: :desc)
+      unless include_deleted_devlogs
+        scope = scope.joins("LEFT JOIN post_devlogs ON posts.postable_type = 'Post::Devlog' AND posts.postable_id = post_devlogs.id")
+                     .where("posts.postable_type != 'Post::Devlog' OR post_devlogs.deleted_at IS NULL")
+      end
+      scope.select { |post| post.postable.present? }
     }
 
     @posts = if policy(@project).view_deleted_devlogs?
-      Post::Devlog.unscoped { load_posts.call }
+      load_posts.call(include_deleted_devlogs: true)
     else
       load_posts.call
     end
@@ -115,7 +119,7 @@ class ProjectsController < ApplicationController
       @liked_devlog_ids = Set.new
     end
 
-    ahoy.track "Viewed project", project_id: @project.id
+    track_event "Viewed project", project_id: @project.id
 
     @latest_ship_post = @posts.find { |post| post.postable_type == "Post::ShipEvent" }
     latest_ship_event = @latest_ship_post&.postable
@@ -145,6 +149,11 @@ class ProjectsController < ApplicationController
 
   def add_test_time
     authorize @project
+
+    unless Flipper.enabled?(:test_time, current_user)
+      redirect_back fallback_location: project_path(@project), alert: "Test time is not available"
+      return
+    end
 
     # NB: query the table directly rather than current_user.hackatime_projects —
     # that reader is overridden (User::HackatimeSync) to only surface real synced
@@ -212,6 +221,7 @@ class ProjectsController < ApplicationController
     end
 
     if success
+      track_event "project_created", { project_id: @project.id, source: "new_form" }
       flash[:notice] = "Project created successfully"
 
       project_hours = @project.total_hackatime_hours
@@ -235,7 +245,7 @@ class ProjectsController < ApplicationController
 
   def edit
     authorize @project
-    load_project_times
+    redirect_to project_path(@project, editing: true)
   end
 
   def update
@@ -325,7 +335,7 @@ class ProjectsController < ApplicationController
             blocks_path: "notifications/new_follower",
             locals: {
               project_title: @project.title,
-              project_url: project_url(@project, host: "flavortown.hackclub.com", protocol: "https"),
+              project_url: project_url(@project, host: "stardance.hackclub.com", protocol: "https"),
               follower_id: current_user.slack_id
             }
           )
@@ -437,7 +447,7 @@ class ProjectsController < ApplicationController
 
     conn = Faraday.new(
       url: uri.to_s,
-      headers: { "User-Agent" => "Stardance project validator (https://flavortown.hackclub.com/)" }
+      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" }
     ) do |faraday|
       faraday.response :follow_redirects, max_redirects: 3
       faraday.adapter Faraday.default_adapter
@@ -503,7 +513,11 @@ class ProjectsController < ApplicationController
   def link_hackatime_projects
     # Unlink hackatime projects that were removed
     @project.hackatime_projects.where.not(id: hackatime_project_ids).find_each do |hp|
-      hp.update(project: nil)
+      unless hp.update(project: nil)
+        hp.errors.full_messages.each do |message|
+          @project.errors.add(:base, "Hackatime project #{hp.name}: #{message}")
+        end
+      end
     end
 
     return if hackatime_project_ids.empty?
@@ -515,11 +529,6 @@ class ProjectsController < ApplicationController
         end
       end
     end
-  end
-
-  def load_project_times
-    result = current_user.try_sync_hackatime_data!
-    @project_times = result&.dig(:projects) || {}
   end
 
   def test_time_session_key

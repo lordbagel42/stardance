@@ -3,7 +3,10 @@
   <h2 class="idv-setup-card__title"><%= title %></h2>
 
   <div class="idv-setup-card__body">
-    <% if ysws_ineligible? %>
+    <% if needs_hca_link? %>
+      <p class="idv-setup-card__lede">Before you can verify your identity, you need to link your Hack Club Account. It takes a minute and you'll come right back here.</p>
+      <p class="idv-setup-card__lede">Stardance is run by Hack Club, a 501(c)(3) nonprofit. Your Hack Club Account saves your progress, keeps your devlogs synced, and ships prizes to you when you earn them.</p>
+    <% elsif ysws_ineligible? %>
       <p class="idv-setup-card__lede">Your identity is verified and your work is public, but you're not yet eligible for YSWS prizes. Open the Hack Club portal for details or contact support.</p>
     <% elsif pending? %>
       <p class="idv-setup-card__lede">Your verification is in the queue. We're a bit backlogged right now, so it may take a day or two. Keep working on your project in the meantime! We'll email you when it's done.</p>
@@ -15,7 +18,14 @@
     <% end %>
   </div>
 
-  <% if ysws_ineligible? %>
+  <% if needs_hca_link? %>
+    <%= button_to "Link or create Hack Club Account",
+                  helpers.hack_club_auth_path(login_hint: user.email),
+                  method: :post,
+                  params: { origin: helpers.request.fullpath },
+                  class: "action-btn action-btn--large action-btn--primary idv-setup-card__cta",
+                  form: { class: "idv-setup-card__cta-form" } %>
+  <% elsif ysws_ineligible? %>
     <%= render ActionButtonComponent.new(
           text: "Open Hack Club portal",
           href: verify_url,

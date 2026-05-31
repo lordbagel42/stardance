@@ -1,0 +1,21 @@
+<turbo-frame id="discover-rail-results" data-discover-rail-search-target="results">
+  <% items = results[:projects] + results[:posts] + results[:users] %>
+
+  <% if items.any? %>
+    <section class="discover-rail__section" aria-label="Search results">
+      <h3 class="discover-rail__heading">SEARCH RESULTS</h3>
+      <ul class="discover-rail__list">
+        <% items.each do |item| %>
+          <li>
+            <%= link_to item[:path], class: "discover-rail__card discover-rail__card--link" do %>
+              <p class="discover-rail__card-title"><%= item[:title] %></p>
+              <p class="discover-rail__card-body"><%= item[:subtitle].presence || item[:preview] %></p>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% else %>
+    <p class="discover-rail__placeholder-text">No results found.</p>
+  <% end %>
+</turbo-frame>

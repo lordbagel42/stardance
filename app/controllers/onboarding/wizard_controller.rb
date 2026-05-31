@@ -6,9 +6,11 @@ class Onboarding::WizardController < ApplicationController
   before_action :require_onboarding_guest!,  only: %i[welcome birthday submit_birthday
                                                       experience submit_experience experience_result
                                                       interests submit_interests interests_result
+                                                      referral submit_referral
                                                       name submit_name]
   before_action :require_teen_attestation!,  only: %i[experience submit_experience experience_result
                                                       interests submit_interests interests_result
+                                                      referral submit_referral
                                                       name submit_name]
 
   def start
@@ -65,6 +67,8 @@ class Onboarding::WizardController < ApplicationController
 
     user = create_guest!(normalized)
     session[:user_id] = user.id
+    UserMailer.onboarding_start(user).deliver_later
+    track_event "onboarding_started", { user_id: user.id }
     redirect_to onboarding_welcome_path
   end
 
@@ -84,6 +88,7 @@ class Onboarding::WizardController < ApplicationController
     case params[:attestation]
     when "teen_13_18"
       current_user.update!(age_attestation: "teen_13_18")
+      track_event "onboarding_age_attested", { attestation: "teen_13_18" }
       redirect_to onboarding_experience_path
     when "ineligible"
       current_user.destroy
@@ -105,11 +110,15 @@ class Onboarding::WizardController < ApplicationController
     end
 
     current_user.update!(experience_level: level)
+    track_event "onboarding_experience_selected", { level: level }
     redirect_to onboarding_experience_result_path
   end
 
   def experience_result
     @level = current_user.experience_level
+    @peer_count = User.where(experience_level: @level)
+                      .where.not(id: current_user.id)
+                      .count
   end
 
   def interests
@@ -120,6 +129,7 @@ class Onboarding::WizardController < ApplicationController
     submitted = Array(params[:interests])
     if submitted.include?(User::INTERESTS_UNKNOWN)
       current_user.update!(interests: [ User::INTERESTS_UNKNOWN ])
+      track_event "onboarding_interests_selected", { interests: [User::INTERESTS_UNKNOWN] }
       redirect_to onboarding_interests_result_path and return
     end
 
@@ -129,11 +139,42 @@ class Onboarding::WizardController < ApplicationController
     end
 
     current_user.update!(interests: selected)
+    track_event "onboarding_interests_selected", { interests: selected }
     redirect_to onboarding_interests_result_path
   end
 
   def interests_result
     @interests = current_user.interests || []
+    if @interests.present? && @interests != [ User::INTERESTS_UNKNOWN ]
+      @peer_count = User.where("interests && ARRAY[?]::varchar[]", @interests)
+                        .where.not(id: current_user.id)
+                        .count
+      @beginner_peer_count = User.where("interests && ARRAY[?]::varchar[]", @interests)
+                                 .where(experience_level: "none")
+                                 .where.not(id: current_user.id)
+                                 .count
+      @featured_projects = Onboarding::FeaturedProjects.for_interests(@interests)
+    end
+  end
+
+  def referral
+    rsvp = matching_rsvp
+
+    if current_user.ref.blank? && rsvp&.ref.present?
+      current_user.update_column(:ref, rsvp.ref)
+    end
+
+    redirect_to onboarding_name_path and return if current_user.user_ref.present?
+
+    @suggested_user_ref = rsvp&.user_ref.presence
+  end
+
+  def submit_referral
+    value = params[:user_ref].to_s.strip
+    value = params[:user_ref_other].to_s.strip.first(100) if value == "Other"
+    current_user.update(user_ref: value.presence)
+    track_event "onboarding_referral_submitted", { user_ref: value.presence }
+    redirect_to onboarding_name_path
   end
 
   def name
@@ -152,6 +193,7 @@ class Onboarding::WizardController < ApplicationController
     end
 
     if current_user.update(display_name: display_name, onboarded_at: Time.current)
+      track_event "onboarding_completed", { display_name: display_name }
       redirect_to home_path(welcome: 1)
     else
       alert = if current_user.errors[:display_name].any? { |m| m =~ /taken/i }
@@ -203,6 +245,18 @@ class Onboarding::WizardController < ApplicationController
 
   private
 
+  def signup_referral_code
+    code = cookies[:referral_code].presence
+    code if code && code.length <= 64
+  end
+
+  def matching_rsvp
+    return @matching_rsvp if defined?(@matching_rsvp)
+
+    email = current_user.email.to_s.downcase
+    @matching_rsvp = email.present? ? Rsvp.find_by(email: email) : nil
+  end
+
   def censor_email(email)
     local, domain = email.split("@", 2)
     return email if local.length <= 2
@@ -211,8 +265,15 @@ class Onboarding::WizardController < ApplicationController
   end
 
   def create_guest!(email)
+    ref = signup_referral_code
     5.times do
-      user = User.new(email: email, display_name: User.placeholder_display_name_from_email(email))
+      user = User.new(
+        email: email,
+        display_name: User.placeholder_display_name_from_email(email),
+        ref: ref,
+        ip_address: client_ip_address,
+        user_agent: request.user_agent
+      )
       return user if user.save
       # Email collision means the user already exists — hand back the existing
       # record. For any other error (most likely a display_name collision in
