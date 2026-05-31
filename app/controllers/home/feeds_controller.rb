@@ -1,6 +1,7 @@
 class Home::FeedsController < ApplicationController
   include OnboardingResumable
 
+  skip_before_action :remember_page
   before_action :resume_or_expire_onboarding!
 
   def show
