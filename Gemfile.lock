@@ -109,6 +109,9 @@ GEM
     annotaterb (4.22.0)
       activerecord (>= 6.0.0)
       activesupport (>= 6.0.0)
+    appsignal (4.8.4)
+      logger
+      rack (>= 2.0.0)
     argon2-kdf (1.0.0)
       fiddle
     ast (2.4.3)
@@ -775,6 +778,7 @@ DEPENDENCIES
   activeinsights
   ahoy_matey
   annotaterb
+  appsignal
   awesome_print
   aws-sdk-s3
   blazer
