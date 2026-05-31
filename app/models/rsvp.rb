@@ -50,6 +50,27 @@ class Rsvp < ApplicationRecord
   after_commit :enqueue_geocode_job, on: :create
   after_create_commit :broadcast_counter_update
 
+  class << self
+    def ambassador_referrals
+      where("LOWER(ref) LIKE ?", "#{AMBASSADOR_REFERRAL_PREFIX}%")
+    end
+  end
+
+  def ambassador_referral_payload
+    {
+      id: id,
+      email: email,
+      ref: ref,
+      user_ref: user_ref,
+      click_confirmed_at: click_confirmed_at,
+      reply_confirmed_at: reply_confirmed_at,
+      signup_confirmation_sent_at: signup_confirmation_sent_at,
+      synced_at: synced_at,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
+
   def deliver_signup_confirmation
     return if signup_confirmation_sent_at?
 

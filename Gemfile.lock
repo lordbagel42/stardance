@@ -154,7 +154,7 @@ GEM
     blind_index (2.8.0)
       activesupport (>= 7.2)
       argon2-kdf (>= 1)
-    bootsnap (1.24.3)
+    bootsnap (1.24.5)
       msgpack (~> 1.2)
     brakeman (8.0.4)
       racc
@@ -217,7 +217,7 @@ GEM
       tzinfo
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
-    faraday (2.14.1)
+    faraday (2.14.2)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
@@ -228,7 +228,7 @@ GEM
       hashie
     faraday-multipart (1.2.0)
       multipart-post (~> 2.0)
-    faraday-net_http (3.4.2)
+    faraday-net_http (3.4.3)
       net-http (~> 0.5)
     faraday-net_http_persistent (2.3.1)
       faraday (~> 2.5)
@@ -240,7 +240,9 @@ GEM
     ffi (1.17.4-x86_64-linux-gnu)
     fiddle (1.1.8)
     flipper (1.4.2)
+    flipper (1.4.2)
       concurrent-ruby (< 2)
+    flipper-active_record (1.4.2)
     flipper-active_record (1.4.2)
       activerecord (>= 4.2, < 9)
       flipper (~> 1.4.2)
@@ -641,7 +643,7 @@ GEM
     sass-embedded (1.99.0-x86_64-linux-gnu)
       google-protobuf (~> 4.31)
     securerandom (0.4.1)
-    selenium-webdriver (4.43.0)
+    selenium-webdriver (4.44.0)
       base64 (~> 0.2)
       logger (~> 1.4)
       rexml (~> 3.2, >= 3.2.5)

@@ -1066,6 +1066,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_025605) do
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
 
+  create_table "user_preferences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "leaderboard_optin", default: false, null: false
+    t.boolean "search_engine_indexing_off", default: false, null: false
+    t.boolean "send_notifications_for_followed_projects", default: true, null: false
+    t.boolean "send_notifications_for_followed_users", default: true, null: false
+    t.boolean "send_notifications_for_new_comments", default: true, null: false
+    t.boolean "send_notifications_for_new_followers", default: true, null: false
+    t.boolean "send_votes_to_slack", default: false, null: false
+    t.boolean "stardust_balance_notifications", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
+    t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
+  end
+
   create_table "user_vote_verdicts", force: :cascade do |t|
     t.datetime "assessed_at"
     t.datetime "created_at", null: false
