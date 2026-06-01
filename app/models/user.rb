@@ -234,7 +234,7 @@ class User < ApplicationRecord
   private
 
   def increment_signup_counter
-    Rails.cache.increment("landing/signup_count")
+    Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)
   end
 
   def enqueue_geocode_job
