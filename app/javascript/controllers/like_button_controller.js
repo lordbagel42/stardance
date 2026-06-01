@@ -2,13 +2,13 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["btn", "count", "sprite"]
-  static values  = { url: String, liked: Boolean }
+  static values = { url: String, liked: Boolean }
 
   toggle(event) {
     event.preventDefault()
 
-    const csrf    = document.querySelector('meta[name="csrf-token"]')?.content
-    const method  = this.likedValue ? "DELETE" : "POST"
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content
+    const method = this.likedValue ? "DELETE" : "POST"
     const nowLiked = !this.likedValue
 
     if (nowLiked) {
@@ -30,7 +30,7 @@ export default class extends Controller {
     fetch(this.urlValue, {
       method,
       headers: {
-        "Accept":       "application/json",
+        "Accept": "application/json",
         "X-CSRF-Token": csrf,
       },
     })

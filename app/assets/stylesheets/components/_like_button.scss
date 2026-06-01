@@ -51,10 +51,13 @@
       transition-duration: 1s;
       -webkit-mask-position: -1400px 0;
               mask-position: -1400px 0;
+      will-change: mask-position;
     }
   }
 
   &__count {
     font-size: 1rem;
+    min-width: 1.5ch;
+    text-align: left;
   }
 }
