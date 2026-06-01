@@ -33,6 +33,19 @@
     &:hover {
       color: rgba(255, 255, 255, 0.85);
     }
+
+    &--reauth {
+      appearance: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+    }
+  }
+
+  &__reauth {
+    display: inline;
   }
 }
 
@@ -516,6 +529,7 @@
       margin-top: 0.5rem;
     }
   }
+
 }
 
 // Experience — discrete 4-step slider.

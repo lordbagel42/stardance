@@ -131,6 +131,10 @@ class User < ApplicationRecord
     ineligible: "ineligible"
   }, prefix: :age_attestation
 
+  def age_blocked?
+    age_attestation_ineligible? && manual_ysws_override != true
+  end
+
   enum :experience_level, {
     none: "none",
     little: "little",

@@ -27,7 +27,7 @@ class SessionsController < ApplicationController
       UserMailer.onboarding_start(result.user).deliver_later
     end
 
-    destination = if result.user.onboarded_at.nil? && result.user.age_attestation_ineligible?
+    destination = if result.user.onboarded_at.nil? && result.user.age_blocked?
       onboarding_age_gate_path
     elsif result.user.onboarded_at.nil? && result.is_new_user
       onboarding_welcome_path

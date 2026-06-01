@@ -36,7 +36,7 @@ module Sessions
         return failure
       end
 
-      if user.age_attestation_ineligible?
+      if user.age_blocked?
         return age_ineligible_result(user, is_new_user, guest_collision)
       end
 
@@ -151,7 +151,7 @@ module Sessions
         user.last_name = fields[:last_name] if fields[:last_name].present?
         user.slack_id = fields[:slack_id] if user.slack_id.to_s != fields[:slack_id]
 
-        case hca_age_attestation(fields)
+        case hca_age_attestation(user, fields)
         when :teen then user.age_attestation = "teen_13_18"
         when :ineligible then user.age_attestation = "ineligible"
         end
@@ -198,8 +198,9 @@ module Sessions
         age
       end
 
-      def hca_age_attestation(fields)
+      def hca_age_attestation(user, fields)
         return :teen if fields[:ysws_eligible]
+        return :teen if user.persisted? && user.manual_ysws_override == true
         return nil if fields[:birthday].nil?
 
         age = age_from_birthday(fields[:birthday])
