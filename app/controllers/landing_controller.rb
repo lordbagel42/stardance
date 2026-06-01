@@ -53,7 +53,7 @@ class LandingController < ApplicationController
 
   def cached_signup_count
     Rails.cache.fetch("landing/signup_count", raw: true, expires_in: 30.seconds) {
-      user_emails = User.where.not(email: [nil, ""]).select("LOWER(email) AS email")
+      user_emails = User.where.not(email: [ nil, "" ]).select("LOWER(email) AS email")
       rsvp_emails = Rsvp.select("LOWER(email) AS email")
       ActiveRecord::Base.connection.select_value(
         "SELECT COUNT(*) FROM (#{user_emails.to_sql} UNION #{rsvp_emails.to_sql}) AS combined"

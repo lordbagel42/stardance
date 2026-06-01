@@ -17,13 +17,13 @@ module Admin
         variant = @mission.guide_variants.find_by("LOWER(language) = ?", old_name.downcase)
         unless variant
           redirect_to edit_admin_mission_path(@mission.slug),
-                      alert: "Language "#{old_name}" not found." and return
+                      alert: "Language "# {old_name}" not found." and return
         end
 
         existing = @mission.guide_variants.find_by("LOWER(language) = ?", new_name.downcase)
         if existing
           redirect_to edit_admin_mission_path(@mission.slug, language: existing.language),
-                      alert: "A guide for "#{existing.language}" already exists." and return
+                      alert: "A guide for "# {existing.language}" already exists." and return
         end
 
         Mission::GuideVariant.transaction do
@@ -36,7 +36,7 @@ module Admin
         end
 
         redirect_to edit_admin_mission_path(@mission.slug, language: new_name),
-                    notice: "Language renamed from "#{old_name}" to "#{new_name}"."
+                    notice: "Language renamed from "# {old_name}" to "#{new_name}"."
       end
 
       def destroy
@@ -50,7 +50,7 @@ module Admin
         variant = @mission.guide_variants.find_by("LOWER(language) = ?", language.downcase)
         unless variant
           redirect_to edit_admin_mission_path(@mission.slug),
-                      alert: "Language "#{language}" not found." and return
+                      alert: "Language "# {language}" not found." and return
         end
 
         Mission::GuideVariant.transaction do
@@ -64,7 +64,7 @@ module Admin
 
         fallback = @mission.default_guide&.language
         redirect_to edit_admin_mission_path(@mission.slug, language: fallback),
-                    notice: "Language "#{language}" deleted."
+                    notice: "Language "# {language}" deleted."
       end
     end
   end
