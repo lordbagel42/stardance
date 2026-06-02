@@ -202,6 +202,9 @@ application.register("searchable-select", SearchableSelectController);
 import ShopController from "./shop_controller";
 application.register("shop", ShopController);
 
+import SlackDoodleController from "./slack_doodle_controller";
+application.register("slack-doodle", SlackDoodleController);
+
 import ShopWishlistController from "./shop_wishlist_controller";
 application.register("shop-wishlist", ShopWishlistController);
 

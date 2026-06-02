@@ -18,6 +18,8 @@ class SessionsController < ApplicationController
       return redirect_to(root_path, alert: result.alert)
     end
 
+    was_guest = current_user&.guest? || current_user.nil?
+
     reset_session if result.guest_collision
     session[:user_id] = result.user.id
 
@@ -26,6 +28,8 @@ class SessionsController < ApplicationController
     if result.is_new_user
       UserMailer.onboarding_start(result.user).deliver_later
     end
+
+    session[:just_joined_slack] = true if was_guest
 
     destination = if result.user.onboarded_at.nil? && result.user.age_blocked?
       onboarding_age_gate_path
