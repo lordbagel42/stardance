@@ -128,10 +128,11 @@
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
                 <span>Hackatime projects</span>
                 <% if !@hackatime_linked %>
-                  <%= link_to "Connect Hackatime to link projects →",
-                              "/auth/hackatime?origin=#{CGI.escape(request.fullpath)}",
-                              class: "project-show__hackatime-connect",
-                              data: { turbo_method: :post } %>
+                  <button type="submit"
+                          form="hackatime-connect-form"
+                          class="project-show__hackatime-connect">
+                    Connect Hackatime to link projects →
+                  </button>
                 <% elsif @hackatime_dropdown_items.blank? %>
                   <span class="project-show__hackatime-empty">
                     No Hackatime projects yet — start coding with Hackatime installed to see them here.
@@ -266,6 +267,12 @@
             </div>
           </div>
         </header>
+      <% end %>
+      <% unless @hackatime_linked %>
+        <form id="hackatime-connect-form" method="post" action="/auth/hackatime" hidden>
+          <input type="hidden" name="origin" value="<%= request.fullpath %>">
+          <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        </form>
       <% end %>
     <% else %>
       <article class="project-show">
