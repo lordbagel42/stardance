@@ -60,7 +60,7 @@
 
   <% if decision.feedback.present? %>
     <section class="ship-decision-card__feedback" aria-label="Shipwright feedback">
-      <p class="ship-decision-card__feedback-label">Shipwright feedback</p>
+      <p class="ship-decision-card__feedback-label">Feedback</p>
       <div class="ship-decision-card__feedback-body">
         <%= simple_format(decision.feedback, {}, sanitize: true) %>
       </div>
