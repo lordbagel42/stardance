@@ -9,6 +9,7 @@
     "This ship needs updates before it can continue."
   end
   decided_on = decision.decided_on || post.created_at
+  reviewer_name = decision.reviewer&.display_name.presence
 %>
 
 <article id="<%= dom_id(post) %>"
@@ -19,7 +20,14 @@
          ) %>">
   <div class="ship-decision-card__flag">
     <%= inline_svg_tag "icons/ship.svg", class: "ship-decision-card__flag-icon" %>
-    <span>Private Shipwright verdict</span>
+    <span>Shipwright Verdict</span>
+    <span class="ship-decision-card__info"
+          tabindex="0"
+          aria-label="Who are Shipwrights?"
+          data-controller="tooltip"
+          data-tooltip-title-value="Who are Shipwrights?"
+          data-tooltip-message-value="Shipwrights review submitted ships for quality, working demos, clear writeups, and program rules before projects move forward."
+          data-tooltip-position-value="top">?</span>
     <span class="status-pill status-pill--<%= decision.verdict %>"><%= decision.verdict.capitalize %></span>
   </div>
 
@@ -40,6 +48,15 @@
           · <%= time_ago_in_words(decided_on) %>
         </time>
       </p>
+      <% if reviewer_name %>
+        <p class="ship-decision-card__reviewer">
+          <span>Reviewed by</span>
+          <%= link_to "@#{reviewer_name}",
+                      profile_path(reviewer_name),
+                      class: "ship-decision-card__reviewer-link",
+                      data: { turbo_frame: "_top" } %>
+        </p>
+      <% end %>
       <p class="ship-decision-card__message"><%= message %></p>
     </div>
   </header>

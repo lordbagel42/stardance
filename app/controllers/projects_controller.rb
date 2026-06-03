@@ -182,6 +182,10 @@ class ProjectsController < ApplicationController
     if (ships = grouped["Post::ShipEvent"])
       preloader.call(ships, postable: [ :attachments_attachments, { mission_submission: :mission } ])
     end
+
+    if (ship_decisions = grouped["Post::ShipDecision"])
+      preloader.call(ship_decisions, postable: :reviewer)
+    end
   end
   private :preload_timeline_postables
 

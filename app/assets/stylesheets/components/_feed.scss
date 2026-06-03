@@ -1047,6 +1047,25 @@
     color: var(--ship-decision-accent);
   }
 
+  &__info {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+    line-height: 1;
+    cursor: help;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+      outline: none;
+    }
+  }
+
   &__main {
     display: flex;
     align-items: flex-start;
@@ -1095,6 +1114,22 @@
   }
 
   &__project {
+    color: var(--color-space-text);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &__reviewer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__reviewer-link {
     color: var(--color-space-text);
     font-weight: 700;
     text-decoration: underline;

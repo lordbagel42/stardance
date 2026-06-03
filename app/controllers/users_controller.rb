@@ -137,6 +137,10 @@ class UsersController < ApplicationController
     if (ships = grouped["Post::ShipEvent"])
       preloader.call(ships, postable: :attachments_attachments)
     end
+
+    if (ship_decisions = grouped["Post::ShipDecision"])
+      preloader.call(ship_decisions, postable: :reviewer)
+    end
   end
 
   def user_params
