@@ -18,8 +18,6 @@ module Raffle
     validates :github_login, presence: true, if: :age_group_adult?
     validate :has_identity
 
-    ELIGIBLE_COUNTRIES = %w[US CA].freeze
-
     def self.generate_unique_code
       alphabet = "abcdefghjkmnpqrstuvwxyz23456789"
       100.times do
@@ -33,7 +31,7 @@ module Raffle
       participant = find_or_initialize_by(user: user)
       if participant.new_record?
         participant.age_group = :teen
-        participant.signup_week = Raffle::Week.current if country_eligible?(user)
+        participant.signup_week = Raffle::Week.current
         participant.save!
       end
       participant
@@ -71,18 +69,12 @@ module Raffle
     end
 
     def eligible?
-      return eligible unless age_group_teen?
-      eligible && self.class.country_eligible?(user)
+      eligible
     end
 
     def hca_linked?
       return true unless age_group_teen?
       user&.hca_linked?
-    end
-
-    def self.country_eligible?(user)
-      country = user.geocoded_country.presence || user.shop_region.to_s.presence
-      country&.in?(ELIGIBLE_COUNTRIES) || false
     end
 
     def pending_referrals

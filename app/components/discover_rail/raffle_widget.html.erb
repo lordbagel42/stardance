@@ -14,7 +14,7 @@
     <span class="raffle-widget__ref-stat"><strong><%= pending_count %></strong> pending</span>
   </div>
 
-  <% if raffle_eligible? && week %>
+  <% if week %>
     <div class="raffle-widget__raffle-link">
       <a href="<%= helpers.raffle_base_url %>/">GPU Raffle &rarr;</a>
       <span><%= entry_count %> <%= "entry".pluralize(entry_count) %> · week <%= week.number %>/16</span>

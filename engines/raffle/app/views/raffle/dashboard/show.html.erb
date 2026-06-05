@@ -118,16 +118,7 @@
         We're giving away an AMD Radeon RX 9060 XT every week for 16 weeks.
         Sign up, share your referral link, and earn entries.
       </p>
-      <% if signed_in? && current_user&.geocoded_country.present? %>
-        <p class="raffle-landing__ineligible">
-          The GPU raffle is open to participants in the US and Canada.
-          Your region (<%= current_user.geocoded_country %>) isn't eligible.
-        </p>
-      <% elsif signed_in? %>
-        <p class="raffle-landing__ineligible">
-          To enter the raffle, verify your identity or link your Hack Club account
-          so we can confirm you're in the US or Canada.
-        </p>
+      <% if signed_in? %>
         <a href="<%= main_app_base_url %>/" class="raffle-btn raffle-landing__cta">
           Go to Stardance
         </a>
@@ -144,7 +135,7 @@
           <% end %>
         </div>
       <% end %>
-      <p class="raffle-landing__meta">US &amp; Canada only · Ages 13+</p>
+      <p class="raffle-landing__meta">Ages 13+ · Open worldwide</p>
     </div>
 
     <%= render "raffle/dashboard/leaderboard",

@@ -28,10 +28,6 @@ module DiscoverRail
       participant.present?
     end
 
-    def raffle_eligible?
-      user.geocoded_country.presence&.in?(%w[US CA])
-    end
-
     def verified_count
       return 0 unless participant
       participant.referrals.status_verified.count
