@@ -166,6 +166,9 @@ class User < ApplicationRecord
   after_commit :enqueue_geocode_job, on: :create
 
   scope :discoverable, -> { joins(:hack_club_identity).distinct }
+  scope :on_leaderboard, -> {
+    discoverable.joins(:preference).where(user_preferences: { leaderboard_optin: true }, banned: false)
+  }
   scope :ambassador_referrals, -> {
     where(arel_table[:ref].lower.matches("#{Rsvp::AMBASSADOR_REFERRAL_PREFIX}%"))
   }

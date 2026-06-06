@@ -1,6 +1,21 @@
 module User::Wallet
   extend ActiveSupport::Concern
 
+  included do
+    scope :top_by_balance, ->(limit = 10) { order(approx_balance: :desc).limit(limit) }
+    scope :top_by_total_earned, ->(limit = 10) { order(approx_total_earned: :desc).limit(limit) }
+  end
+
+  class_methods do
+    def balance_rank_for(user)
+      where("approx_balance > ?", user.approx_balance).count + 1
+    end
+
+    def total_earned_rank_for(user)
+      where("approx_total_earned > ?", user.approx_total_earned).count + 1
+    end
+  end
+
   def balance = ledger_entries.sum(:amount)
 
   def total_earned = ledger_entries.where("amount > 0").sum(:amount)
