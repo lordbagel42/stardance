@@ -278,6 +278,10 @@ class Project < ApplicationRecord
     event :return_for_changes do
       transitions from: :under_review, to: :needs_changes
     end
+
+    event :resubmit_for_review do
+      transitions from: :needs_changes, to: :submitted
+    end
   end
 
   # Maps each editable info field on the project form to the shipping

@@ -163,6 +163,8 @@ module Certification
           create_ysws_review_for_ship(ship_event) if ship_event
         when :returned
           project.return_for_changes! if project.may_return_for_changes?
+          ship_event = project.last_ship_event
+          ship_event&.update!(certification_status: "returned")
         end
       end
     end
