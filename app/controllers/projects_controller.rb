@@ -112,10 +112,11 @@ class ProjectsController < ApplicationController
                                       .uniq
       Mission.available
              .where.not(id: taken_mission_ids)
-             .with_attached_icon
+             .includes(:icon_attachment, :prerequisites)
              .order(featured_at: :desc)
-             .limit(12)
              .to_a
+             .select { |m| m.prerequisites_met_by?(current_user) }
+             .first(12)
     else
       []
     end
@@ -213,9 +214,11 @@ class ProjectsController < ApplicationController
     authorize @project
     @missions = Mission.available
                        .where.not(id: missions_user_already_has_a_project_on)
-                       .includes(:icon_attachment, :banner_attachment)
+                       .includes(:icon_attachment, :banner_attachment, :prerequisites)
                        .order(featured_at: :desc)
-                       .limit(8)
+                       .to_a
+                       .select { |m| m.prerequisites_met_by?(current_user) }
+                       .first(8)
   end
 
   def missions_user_already_has_a_project_on
@@ -254,7 +257,7 @@ class ProjectsController < ApplicationController
 
       project_hours = @project.total_hackatime_hours
 
-      if (slug = params[:mission_slug].presence) && (mission = Mission.find_by(slug: slug))
+      if (slug = params[:mission_slug].presence) && (mission = Mission.find_by(slug: slug)) && mission.prerequisites_met_by?(current_user)
         @project.missions << mission
         attrs = {}
         if @project.title.blank? || @project.title == "Untitled"

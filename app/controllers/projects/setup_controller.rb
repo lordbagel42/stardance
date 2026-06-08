@@ -200,26 +200,22 @@ class Projects::SetupController < ApplicationController
   def suggested_missions
     scope = Mission.available
                    .where.not(id: missions_user_already_has_a_project_on)
-                   .includes(:icon_attachment)
+                   .includes(:icon_attachment, :prerequisites)
 
     difficulties = EXPERIENCE_TO_DIFFICULTIES[current_user.experience_level.to_s]
-    if difficulties.present?
+    candidates = if difficulties.present?
       matched = scope.where(difficulty: difficulties)
                      .order(featured_at: :desc)
-                     .limit(6)
                      .to_a
-      remaining_slots = 6 - matched.size
-      if remaining_slots.positive?
-        rest = scope.where.not(id: matched.map(&:id))
-                    .order(featured_at: :desc)
-                    .limit(remaining_slots)
-        matched + rest.to_a
-      else
-        matched
-      end
+      rest = scope.where.not(id: matched.map(&:id))
+                  .order(featured_at: :desc)
+                  .to_a
+      matched + rest
     else
-      scope.order(featured_at: :desc).limit(6).to_a
+      scope.order(featured_at: :desc).to_a
     end
+
+    candidates.select { |m| m.prerequisites_met_by?(current_user) }.first(6)
   end
 
   def missions_user_already_has_a_project_on

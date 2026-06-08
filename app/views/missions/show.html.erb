@@ -6,6 +6,16 @@
 <div class="app-layout">
   <div class="app-layout__main">
     <article class="mission-home">
+      <p class="mission-home__crumb">
+        <span class="mission-home__crumb-links">
+          <%= link_to "Missions", missions_path, class: "mission-home__crumb-link" %>
+          <% if policy(@mission).manage? %>
+            <span class="mission-home__crumb-dot" aria-hidden="true">·</span>
+            <%= link_to "Manage", edit_admin_mission_path(@mission.slug), class: "mission-home__crumb-link" %>
+          <% end %>
+        </span>
+      </p>
+
       <% if @mission.banner.attached? %>
         <div class="mission-home__banner">
           <%= image_tag @mission.banner, alt: "", class: "mission-home__banner-img" %>
@@ -25,16 +35,6 @@
           </p>
         </div>
       <% end %>
-
-      <p class="mission-home__crumb">
-        <span class="mission-home__crumb-links">
-          <%= link_to "Missions", missions_path, class: "mission-home__crumb-link" %>
-          <% if policy(@mission).manage? %>
-            <span class="mission-home__crumb-dot" aria-hidden="true">·</span>
-            <%= link_to "Manage", edit_admin_mission_path(@mission.slug), class: "mission-home__crumb-link" %>
-          <% end %>
-        </span>
-      </p>
 
       <section class="mission-home__hero">
         <%# star creature peeking off the top-right of the hero card %>
@@ -208,7 +208,7 @@
             Projects for this <em class="mission-home__section-title-accent">mission</em>
           </h2>
           <ul class="mission-home__gallery-grid">
-            <% @gallery_projects.first(3).each do |project| %>
+            <% @gallery_projects.each do |project| %>
               <li class="mission-home__gallery-item">
                 <% if @approved_project_ids.include?(project.id) %>
                   <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Approved</span>

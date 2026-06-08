@@ -35,7 +35,7 @@ class MissionsController < ApplicationController
     @ordered_prizes       = @mission.prizes.ordered.includes(:shop_item).to_a
     @guide_outline        = @mission.guide_sections
     @stats                = mission_stats(@mission)
-    @gallery_projects     = @mission.showcase_projects(limit: 3)
+    @gallery_projects     = @mission.showcase_projects(limit: nil)
     @approved_project_ids = @mission.approved_submission_project_ids.to_set
     @estimated_label      = @mission.estimated_completion_label
     @active_project       = current_user&.active_project_for_mission(@mission)
