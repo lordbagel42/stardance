@@ -352,7 +352,7 @@ class Mission < ApplicationRecord
     end
   end
 
-  def showcase_projects(limit: 6)
+  def showcase_projects(limit: 6, offset: 0)
     devlog_likes = Post::Devlog
                      .joins(:post)
                      .group("posts.project_id")
@@ -370,8 +370,8 @@ class Mission < ApplicationRecord
           + COUNT(DISTINCT project_follows.id)) DESC,
         projects.id DESC
       SQL
+      .offset(offset)
       .limit(limit)
-      .includes(:users)
       .with_attached_banner
       .to_a
   end
