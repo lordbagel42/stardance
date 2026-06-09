@@ -38,6 +38,7 @@ module Certification
 
     belongs_to :project
     belongs_to :reviewer, class_name: "User", optional: true
+    belongs_to :returned_by, class_name: "User", optional: true
 
     has_paper_trail
 
