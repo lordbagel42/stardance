@@ -285,15 +285,15 @@ class Project < ApplicationRecord
   end
 
   # Maps each editable info field on the project form to the shipping
-  # requirement keys it satisfies. Mirrors FIELD_REQUIREMENT_MAP in the
-  # project-form Stimulus controller. The union of these keys is what
+  # requirement keys it satisfies. The union of these keys is what
   # distinguishes "project info" from gates like devlog / payout / vote balance.
   FIELD_REQUIREMENT_MAP = {
     description: %i[description],
     demo_url: %i[demo_url demo_url_reachable],
     repo_url: %i[repo_url repo_url_format repo_cloneable],
     readme_url: %i[readme_url readme_url_reachable],
-    banner: %i[banner]
+    banner: %i[banner],
+    ai_declaration: %i[ai_declaration]
   }.freeze
 
   INFO_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.values.flatten.freeze
@@ -349,6 +349,12 @@ class Project < ApplicationRecord
         label: "Add a description for your project",
         tooltip: "A short summary of what your project does and what makes it interesting.",
         passed: description.present?
+      },
+      {
+        key: :ai_declaration,
+        label: "Declare your AI usage (write \"None\" if you didn't use any)",
+        tooltip: "Describe how you used AI in this project. AI use is OK, but it should feel like your own work — if you didn't use any, write \"None\".",
+        passed: ai_declaration.present?
       },
       {
         key: :banner,
@@ -411,16 +417,10 @@ class Project < ApplicationRecord
         tooltip: "Your devlogs must have actual tracked time attached. Make sure you're logging time via Hackatime.",
         passed: duration_seconds > 10
       }
-      # { key: :ai_declaration, label: "Declare your AI usage for this project (write 'None' if you didn't use any)", passed: ai_declaration.present? }
     ]
       .map.with_index
       .sort_by { |pair| [ pair[0][:passed] ? 1 : 0, pair[1] ] }
       .map { |it| it[0] }
-  end
-
-  def visual_shipping_requirements
-    # only those that have a label we could use right now
-    shipping_requirements.select { |elem| !elem[:passed] || elem[:label] }
   end
 
   def shippable? = ship_blocking_errors.empty?

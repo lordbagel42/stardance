@@ -1,7 +1,11 @@
 module Admin
   module Raffles
     class ParticipantsController < Admin::ApplicationController
-      before_action :set_participant, only: [ :show ]
+      before_action :set_participant, only: [
+        :show, :reject_referrals, :ban_participant, :ban_user, :ban_referred_users,
+        :reject_selected, :ban_selected,
+        :reject_referral, :ban_referred_user, :clear_fraud, :unclear_fraud
+      ]
 
       def index
         authorize :admin, :access_raffles?
@@ -26,10 +30,234 @@ module Admin
                                  .order(created_at: :desc)
       end
 
+      # ── Bulk actions (redirect back to wherever you came from) ─────────
+
+      def reject_referrals
+        authorize :admin, :access_raffles?
+
+        count = 0
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          @participant.referrals.where.not(status: [ :self_referral, :rejected ]).find_each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            count += 1
+          end
+        end
+
+        redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                      allow_other_host: false,
+                      notice: "Rejected #{count} referral(s) for #{@participant.display_name}."
+      end
+
+      def ban_participant
+        authorize :admin, :access_raffles?
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          @participant.paper_trail_event = "fraud_ban_participant"
+          @participant.update!(eligible: false)
+        end
+
+        redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                      allow_other_host: false,
+                      notice: "#{@participant.display_name} removed from raffle."
+      end
+
+      def ban_user
+        authorize :admin, :access_raffles?
+
+        user = @participant.user
+        unless user
+          return redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                               allow_other_host: false,
+                               alert: "No linked platform user."
+        end
+
+        if user.banned?
+          return redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                               allow_other_host: false,
+                               alert: "#{user.display_name} is already banned."
+        end
+
+        reason = "Raffle referral fraud"
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          user.ban!(reason: reason)
+          ::PaperTrail::Version.create!(
+            item_type: "User", item_id: user.id, event: "banned",
+            whodunnit: current_user.id.to_s,
+            object_changes: { banned: [ false, true ], banned_reason: [ nil, reason ] }.to_json
+          )
+          @participant.paper_trail_event = "fraud_ban_participant"
+          @participant.update!(eligible: false)
+        end
+
+        redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                      allow_other_host: false,
+                      notice: "#{user.display_name} banned from platform."
+      end
+
+      def ban_referred_users
+        authorize :admin, :access_raffles?
+
+        reason = "Raffle referral fraud (referred by #{@participant.display_name})"
+        banned = 0
+        rejected = 0
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          @participant.referrals.where.not(status: [ :self_referral, :rejected ]).find_each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            rejected += 1
+
+            user = referral.referred_user
+            next unless user && !user.banned?
+            user.ban!(reason: reason)
+            ::PaperTrail::Version.create!(
+              item_type: "User", item_id: user.id, event: "banned",
+              whodunnit: current_user.id.to_s,
+              object_changes: { banned: [ false, true ], banned_reason: [ nil, reason ] }.to_json
+            )
+            banned += 1
+          end
+        end
+
+        redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                      allow_other_host: false,
+                      notice: "Rejected #{rejected} referral(s), banned #{banned} user(s)."
+      end
+
+      # ── Checkbox bulk actions ──────────────────────────────────────────
+
+      def reject_selected
+        authorize :admin, :access_raffles?
+
+        referrals = selected_referrals
+        return redirect_to admin_raffles_participant_path(@participant), alert: "Nothing selected." if referrals.empty?
+
+        count = 0
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referrals.each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            count += 1
+          end
+        end
+
+        redirect_to admin_raffles_participant_path(@participant), notice: "Rejected #{count} referral(s)."
+      end
+
+      def ban_selected
+        authorize :admin, :access_raffles?
+
+        referrals = selected_referrals
+        return redirect_to admin_raffles_participant_path(@participant), alert: "Nothing selected." if referrals.empty?
+
+        reason = "Raffle referral fraud (referred by #{@participant.display_name})"
+        rejected = 0
+        banned = 0
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referrals.each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            rejected += 1
+
+            user = referral.referred_user
+            next unless user && !user.banned?
+            user.ban!(reason: reason)
+            ::PaperTrail::Version.create!(
+              item_type: "User", item_id: user.id, event: "banned",
+              whodunnit: current_user.id.to_s,
+              object_changes: { banned: [ false, true ], banned_reason: [ nil, reason ] }.to_json
+            )
+            banned += 1
+          end
+        end
+
+        redirect_to admin_raffles_participant_path(@participant),
+                    notice: "Rejected #{rejected} referral(s), banned #{banned} user(s)."
+      end
+
+      # ── Per-referral actions (stay on participant page) ────────────────
+
+      def reject_referral
+        authorize :admin, :access_raffles?
+
+        referral = @participant.referrals.find(params[:referral_id])
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referral.paper_trail_event = "fraud_reject"
+          referral.update!(status: :rejected, credited_week: nil)
+        end
+
+        redirect_to admin_raffles_participant_path(@participant), notice: "Referral rejected."
+      end
+
+      def ban_referred_user
+        authorize :admin, :access_raffles?
+
+        referral = @participant.referrals.find(params[:referral_id])
+        user = referral.referred_user
+
+        unless user && !user.banned?
+          return redirect_to admin_raffles_participant_path(@participant),
+                             alert: user&.banned? ? "Already banned." : "No linked user."
+        end
+
+        reason = "Raffle referral fraud"
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referral.paper_trail_event = "fraud_reject"
+          referral.update!(status: :rejected, credited_week: nil) unless referral.status_rejected?
+          user.ban!(reason: reason)
+          ::PaperTrail::Version.create!(
+            item_type: "User", item_id: user.id, event: "banned",
+            whodunnit: current_user.id.to_s,
+            object_changes: { banned: [ false, true ], banned_reason: [ nil, reason ] }.to_json
+          )
+        end
+
+        redirect_to admin_raffles_participant_path(@participant),
+                    notice: "#{user.display_name} banned, referral rejected."
+      end
+
+      # ── Fraud clearing ────────────────────────────────────────────────
+
+      def clear_fraud
+        authorize :admin, :access_raffles?
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          @participant.paper_trail_event = "fraud_cleared"
+          @participant.update!(fraud_cleared: true)
+        end
+
+        redirect_back fallback_location: admin_raffles_fraud_path,
+                      allow_other_host: false,
+                      notice: "#{@participant.display_name} marked as safe."
+      end
+
+      def unclear_fraud
+        authorize :admin, :access_raffles?
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          @participant.paper_trail_event = "fraud_uncleared"
+          @participant.update!(fraud_cleared: false)
+        end
+
+        redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                      allow_other_host: false,
+                      notice: "#{@participant.display_name} back on fraud radar."
+      end
+
       private
 
       def set_participant
         @participant = ::Raffle::Participant.find(params[:id])
+      end
+
+      def selected_referrals
+        ids = params[:referral_ids]
+        return [] unless ids.is_a?(Array)
+        @participant.referrals
+                    .where(id: ids.map(&:to_i))
+                    .where.not(status: [ :self_referral, :rejected ])
       end
 
       def participants_scope
