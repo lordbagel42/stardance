@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_08_175849) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_09_024629) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -235,6 +235,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_175849) do
     t.index ["devlog_id", "version_number"], name: "index_devlog_versions_on_devlog_id_and_version_number", unique: true
     t.index ["devlog_id"], name: "index_devlog_versions_on_devlog_id"
     t.index ["user_id"], name: "index_devlog_versions_on_user_id"
+  end
+
+  create_table "email_templates", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_email_templates_on_name", unique: true
   end
 
   create_table "flipper_features", force: :cascade do |t|

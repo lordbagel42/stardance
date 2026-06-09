@@ -34,4 +34,8 @@ class AdminPolicy < ApplicationPolicy
   def access_raffles?
     user.admin? || user.has_role?(:raffle_admin)
   end
+
+  def access_email_templates?
+    user.admin?
+  end
 end

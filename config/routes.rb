@@ -665,6 +665,7 @@ Rails.application.routes.draw do
       end
     end
     resources :messages, only: [ :index, :create ]
+    resources :email_templates, only: [ :index, :create, :destroy ]
     resources :support_vibes, only: [ :index, :create ]
     resources :sw_vibes, only: [ :index ]
     resources :suspicious_votes, only: [ :index ]
@@ -837,6 +838,8 @@ Rails.application.routes.draw do
   get "search/global",   to: "search#global",   as: :global_search
 
   get "edu", to: "landing#edu", as: :edu
+
+  get "emails/:name", to: "email_templates#show", as: :public_email_template
 
   # Guides
   resources :guides, only: [ :index, :show ]
