@@ -1439,6 +1439,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
+  add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
   add_foreign_key "raffle_weekly_claims", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_weekly_claims", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
