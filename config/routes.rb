@@ -609,6 +609,7 @@ Rails.application.routes.draw do
         get  :votes
       end
     end
+    get "super_stars", to: "super_stars#show", as: :super_stars
     get "user-perms", to: "users#user_perms"
     resource :support, only: [ :show ], controller: "support/dashboards"
     resource :fraud, only: [ :show ], controller: "fraud/dashboards"

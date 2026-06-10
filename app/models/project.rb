@@ -67,6 +67,7 @@ class Project < ApplicationRecord
     user ? where.not(id: user.projects) : all
   }
   scope :fire, -> { where.not(marked_fire_at: nil) }
+  scope :fire_nomination_pending, -> { where.not(nominated_fire_at: nil).where(marked_fire_at: nil) }
   scope :with_ship_events, -> { joins(:ship_events).distinct }
   scope :with_ship_events_between, ->(start_date, end_date) {
     joins(:posts)
