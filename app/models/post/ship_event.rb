@@ -64,6 +64,14 @@ class Post::ShipEvent < ApplicationRecord
                                dependent: :destroy
 
   after_update :sync_mission_submission_status, if: :saved_change_to_certification_status?
+
+  scope :voteable, -> {
+    where(certification_status: "approved", payout: nil)
+      .where("post_ship_events.votes_count < ?", VOTES_TO_LEAVE_POOL)
+      .where("post_ship_events.hours_at_ship > 0")
+  }
+  scope :paid_out, -> { where(certification_status: "approved").where.not(payout: nil) }
+
   after_commit :decrement_user_vote_balance, on: :create
 
   validates :body, presence: { message: "Update message can't be blank" }
@@ -72,7 +80,42 @@ class Post::ShipEvent < ApplicationRecord
   validate :project_can_be_shipped, on: :create
   has_paper_trail ignore: [ :votes_count, :synced_at ]
 
+  def self.recalculate_hours_for_devlog_post(post)
+    return unless post&.project
+
+    post.project.posts.of_ship_events
+        .where("posts.created_at >= ?", post.created_at)
+        .order(:created_at)
+        .first
+        &.postable
+        &.recalculate_hours_at_ship
+  end
+
+  def capture_hours_at_ship
+    reload.recalculate_hours_at_ship
+  end
+
+  def recalculate_hours_at_ship
+    update!(hours_at_ship: hours_logged_in_ship_window)
+  end
+
   private
+
+  def hours_logged_in_ship_window
+    return 0 unless post&.project && post.created_at
+
+    project.posts.of_devlogs(join: true)
+           .where("posts.created_at >= ? AND posts.created_at <= ?", ship_window_start_time, post.created_at)
+           .where(post_devlogs: { deleted_at: nil })
+           .sum("post_devlogs.duration_seconds")
+           .to_f / 3600
+  end
+
+  def ship_window_start_time
+    project.posts.of_ship_events
+           .where("posts.created_at < ?", post.created_at)
+           .maximum(:created_at) || project.created_at
+  end
 
   def project_can_be_shipped
     return unless project
