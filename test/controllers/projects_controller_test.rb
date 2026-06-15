@@ -75,7 +75,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     get project_path(@project)
 
     assert_response :success
-    assert_select ".project-show__onboarding a.project-show__onboarding-cta[href=?]", guide_path("starting-hardware"), text: /Read here to get started/
+    assert_select ".project-show__onboarding a.project-show__onboarding-cta[href=?]", guide_path("starting-hardware"), text: /Read here to start hardware project!/
   end
 
   test "empty software project onboarding does not show the hardware getting started button" do
