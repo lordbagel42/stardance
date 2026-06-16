@@ -5,7 +5,24 @@ class VotesController < ApplicationController
     authorize Vote
 
     @vote_policy = policy(Vote)
-    if @vote_policy.open?
+
+    if current_user && @vote_policy.open?
+      if !current_user.shipped_projects.exists?
+        @vote_blocked_reason = "You rate others' projects, they rate yours, and everyone earns stardust. Median payout is about 10 stardust/hr. Ship a project to unlock 15 ratings."
+        @vote_blocked_title = "Ship first to rate"
+        return
+      end
+
+      if current_user.vote_balance >= 0 && !@vote_policy.has_voting_path_ship?
+        @vote_blocked_reason = "Rating is only available for projects going through the voting payout path."
+        return
+      end
+
+      if current_user.vote_balance >= 0
+        @vote_blocked_reason = "You've finished rating for this ship! Once your payout is processed, you can ship again to unlock more ratings."
+        return
+      end
+
       load_assignment
       track_assignment_view if @assignment
     end
