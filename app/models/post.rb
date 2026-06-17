@@ -43,6 +43,7 @@ class Post < ApplicationRecord
     validates :postable_id, presence: true, if: :postable_type?
     validates :project, presence: true, unless: :repost?
 
+    after_create { postable.capture_hours_at_ship if postable_type == "Post::ShipEvent" }
     after_commit :increment_devlogs_count, on: :create
     after_commit :decrement_devlogs_count, on: :destroy
     after_commit :update_project_duration_seconds, on: [ :create, :destroy ]

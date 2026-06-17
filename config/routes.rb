@@ -748,11 +748,13 @@ Rails.application.routes.draw do
       scope "/ship" do
         get  "mystats", to: "mystats#show", as: "mystats"
         post "mystats/payout_request", to: "mystats#create_payout_request", as: "mystats_payout_request"
+        get  "monitor", to: "ships/monitor#show", as: "ship_monitor"
       end
 
       resources :ships, path: "ship", only: [ :index, :show, :update ] do
         collection do
           get :next
+          get :logs
           get :monitor, to: "ships/monitor#show"
         end
         scope module: :ships do

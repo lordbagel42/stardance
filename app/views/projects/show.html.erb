@@ -1,11 +1,10 @@
+<% owner = @project.memberships.find_by(role: :owner)&.user %>
 <% content_for :title, @project.title %>
-<% content_for :og_title, @project.title %>
-<% content_for :og_description, truncate(@project.display_description.to_s, length: 200) %>
+<% content_for :og_title, "#{@project.title} by @#{owner&.display_name} | Stardance" %>
+<% content_for :og_description, @project.display_description.present? ? truncate(@project.display_description.to_s, length: 200) : "#{@project.devlogs_count} devlogs · #{(@project.duration_seconds.to_i / 3600.0).round} hours worked" %>
 <% content_for :og_image, project_og_image_url(@project, format: :png) %>
 <% content_for :twitter_card, "summary_large_image" %>
-<% content_for :og_author, @project.memberships.find_by(role: :owner)&.user&.display_name %>
-
-<% owner = @project.memberships.find_by(role: :owner)&.user %>
+<% content_for :og_author, owner&.display_name %>
 <% if owner&.preference&.search_engine_indexing_off? %>
   <% content_for :head do %>
     <meta name="robots" content="noindex, nofollow">
@@ -45,7 +44,7 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner<%= ' project-show__banner--empty' unless @project.banner.attached? %>" data-controller="file-upload" data-file-upload-empty-class-value="project-show__banner--empty" data-file-upload-placeholder-selector-value=".project-show__banner-placeholder">
+          <div class="project-show__banner<%= ' project-show__banner--empty' unless @project.banner.attached? %><%= ' ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>" data-controller="file-upload" data-file-upload-empty-class-value="project-show__banner--empty" data-file-upload-placeholder-selector-value=".project-show__banner-placeholder">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
             <% unless @project.banner.attached? %>
               <label class="project-show__banner-placeholder">
@@ -357,7 +356,7 @@
     <% else %>
       <article class="project-show">
         <header class="project-show__hero">
-          <div class="project-show__banner">
+          <div class="project-show__banner <%= 'ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
             <%= link_to back_path,
                         class: "project-show__back",

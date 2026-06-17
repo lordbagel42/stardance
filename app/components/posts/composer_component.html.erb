@@ -43,16 +43,22 @@
           <div class="feed-composer__field">
             <%= f.label :body, body_label, class: "feed-composer__label" %>
             <%= f.text_area :body,
-                  class: "feed-composer__textarea",
+                  class: "feed-composer__textarea-field",
                   rows: 1,
                   maxlength: Post::Devlog::BODY_MAX_LENGTH,
-                  required: simple_mode?,
                   placeholder: placeholder,
                   aria: { label: body_label },
                   data: { composer_target: "textarea",
                           emoji_picker_target: "textarea",
                           controller: "submit-on-meta-enter",
                           action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit" } %>
+            <div class="feed-composer__textarea"
+                 contenteditable="true"
+                 role="textbox"
+                 aria-label="<%= body_label %>"
+                 data-placeholder="<%= placeholder %>"
+                 data-emoji-picker-target="editor"
+                 data-action="focus->composer#showInfo input->emoji-picker#editorInput blur->composer#collapseIfEmpty blur->emoji-picker#editorBlur keydown->emoji-picker#editorKeydown"></div>
           </div>
         </div>
 

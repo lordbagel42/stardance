@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v5".freeze
+  RENDERER_VERSION      = "v6".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
@@ -34,7 +34,7 @@ class MarkdownRenderer
   def self.render(text, allow_images: true)
     return "".freeze if text.blank?
 
-    Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, "images-#{allow_images}", Digest::SHA1.hexdigest(text) ],
+    Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, "images-#{allow_images}", SlackEmoteRegistry.cache_key, Digest::SHA1.hexdigest(text) ],
                       expires_in: CACHE_EXPIRES_IN) do
       raw = get_markdown(text)
       doc = Nokogiri::HTML::DocumentFragment.parse(raw)
@@ -42,6 +42,7 @@ class MarkdownRenderer
       sanitised = sanitize_html(doc.to_html, extra_tags: %w[u], extra_attributes: %w[target rel class])
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
       remove_images(doc) unless allow_images
+      render_slack_emotes(doc)
       harden_links_and_images(doc)
       doc.to_html.freeze
     end
@@ -74,6 +75,29 @@ class MarkdownRenderer
       img["loading"]        = "lazy"
       img["decoding"]       = "async"
       img["referrerpolicy"] = "no-referrer"
+    end
+  end
+
+  def self.render_slack_emotes(doc)
+    registry = SlackEmoteRegistry.all
+    return if registry.blank?
+
+    doc.traverse do |node|
+      next unless node.text?
+      next if node.ancestors.any? { |ancestor| %w[code pre kbd samp script style].include?(ancestor.name) }
+      next unless node.text.match?(SlackEmoteRegistry::SHORTCODE_PATTERN)
+
+      html = ERB::Util.html_escape(node.text).gsub(SlackEmoteRegistry::SHORTCODE_PATTERN) do
+        shortcode = Regexp.last_match(1)
+        src = registry[shortcode]
+        next Regexp.last_match(0) unless src.present?
+
+        escaped_shortcode = ERB::Util.html_escape(":#{shortcode}:")
+        escaped_src = ERB::Util.html_escape(src)
+        %(<img src="#{escaped_src}" alt="#{escaped_shortcode}" title="#{escaped_shortcode}" class="slack-emote">)
+      end
+
+      node.replace(Nokogiri::HTML::DocumentFragment.parse(html))
     end
   end
 

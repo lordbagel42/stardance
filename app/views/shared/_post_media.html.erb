@@ -3,7 +3,7 @@
     <div class="feed-post-card__media-viewport">
       <div class="feed-post-card__media-track">
         <% attachments.each do |attachment| %>
-          <figure class="feed-post-card__media-slide">
+          <figure class="feed-post-card__media-slide <%= 'ai-detected' if current_user&.admin? && attachment.blob.metadata["ai_generated"] %>">
             <% if attachment.variable? %>
               <%= image_tag attachment.variant(:large), alt: "", class: "feed-post-card__image" %>
             <% elsif attachment.content_type.to_s.start_with?("image/") %>
