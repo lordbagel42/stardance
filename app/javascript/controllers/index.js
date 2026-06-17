@@ -16,6 +16,9 @@ application.register("bio-editor", BioEditorController);
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
+import CardLinkController from "./card_link_controller";
+application.register("card-link", CardLinkController);
+
 import Certification__FeedbackTemplatesController from "./certification/feedback_templates_controller";
 application.register(
   "certification--feedback-templates",

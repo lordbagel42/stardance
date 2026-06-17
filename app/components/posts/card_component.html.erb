@@ -1,4 +1,4 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: engagement_data) %>>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: card_data) %>>
   <% if card_link_url.present? %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",

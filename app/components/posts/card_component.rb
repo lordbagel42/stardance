@@ -54,6 +54,21 @@ module Posts
       )
     end
 
+    def card_data
+      url = card_link_url
+      data = engagement_data
+      return data if url.blank?
+
+      controllers = [ data[:controller], "card-link" ].compact.join(" ")
+      actions = [ data[:action], "click->card-link#navigate auxclick->card-link#navigate" ].compact.join(" ")
+
+      data.merge(
+        controller: controllers,
+        card_link_url_value: url,
+        action: actions
+      )
+    end
+
     def engagement_data
       return {} unless track_engagement
 

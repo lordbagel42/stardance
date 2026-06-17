@@ -656,6 +656,7 @@
     inset: 0;
     z-index: 1;
     border-radius: inherit;
+    pointer-events: none;
   }
 
   &__overlay-link:focus-visible {
@@ -781,6 +782,7 @@
     font-size: calc(var(--font-size-s) * 1.2);
     line-height: 1.4;
     overflow-wrap: anywhere;
+    cursor: text;
 
     p {
       margin: 0;
@@ -1518,6 +1520,7 @@
   margin: 0;
   max-height: 84vh;
   overflow: visible;
+  cursor: auto;
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
