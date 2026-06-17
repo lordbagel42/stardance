@@ -123,8 +123,31 @@ export default class extends Controller {
     };
   }
 
+  // Per-chart options for the charts that need a custom y-axis suffix, range,
+  // tooltip formatter, or zero-line grid. The rest fall back to #makeLine's
+  // defaults.
+  #opts({ formatter, suffix, yMin = 0, yMax, zeroGrid = false } = {}) {
+    const { xScale, yScale, legend, tooltip, gridColor } = this.cfg;
+    const y = { ...yScale };
+    if (yMin != null) y.min = yMin;
+    if (yMax != null) y.max = yMax;
+    if (suffix) y.ticks = { ...yScale.ticks, callback: (v) => `${v}${suffix}` };
+    if (zeroGrid) {
+      y.grid = {
+        color: (ctx) =>
+          ctx.tick.value === 0 ? "rgba(255,255,255,0.25)" : gridColor,
+      };
+    }
+    return {
+      plugins: {
+        legend: { labels: legend.labels },
+        tooltip: { ...tooltip, callbacks: { label: formatter } },
+      },
+      scales: { x: xScale, y },
+    };
+  }
+
   renderActivityCharts() {
-    const { yScale, gridColor, tooltip } = this.cfg;
     const data = this.dataValue;
 
     this.charts.push(
@@ -148,20 +171,7 @@ export default class extends Controller {
             { spanGaps: true },
           ),
         ],
-        {
-          plugins: {
-            legend: { labels: this.cfg.legend.labels },
-            tooltip: { ...tooltip, callbacks: { label: FORMATTERS.hours } },
-          },
-          scales: {
-            x: this.cfg.xScale,
-            y: {
-              ...yScale,
-              min: 0,
-              ticks: { ...yScale.ticks, callback: (v) => `${v}h` },
-            },
-          },
-        },
+        this.#opts({ formatter: FORMATTERS.hours, suffix: "h" }),
       ),
 
       this.#makeLine(
@@ -181,22 +191,7 @@ export default class extends Controller {
             },
           },
         ],
-        {
-          plugins: {
-            legend: { labels: this.cfg.legend.labels },
-            tooltip: { ...tooltip, callbacks: { label: FORMATTERS.net } },
-          },
-          scales: {
-            x: this.cfg.xScale,
-            y: {
-              ...yScale,
-              grid: {
-                color: (ctx) =>
-                  ctx.tick.value === 0 ? "rgba(255,255,255,0.25)" : gridColor,
-              },
-            },
-          },
-        },
+        this.#opts({ formatter: FORMATTERS.net, yMin: null, zeroGrid: true }),
       ),
 
       this.#makeLine(this.throughputTarget, [
@@ -241,21 +236,7 @@ export default class extends Controller {
             { spanGaps: true },
           ),
         ],
-        {
-          plugins: {
-            legend: { labels: this.cfg.legend.labels },
-            tooltip: { ...tooltip, callbacks: { label: FORMATTERS.pct } },
-          },
-          scales: {
-            x: this.cfg.xScale,
-            y: {
-              ...yScale,
-              min: 0,
-              max: 100,
-              ticks: { ...yScale.ticks, callback: (v) => `${v}%` },
-            },
-          },
-        },
+        this.#opts({ formatter: FORMATTERS.pct, suffix: "%", yMax: 100 }),
       ),
 
       this.#makeLine(this.participationTarget, [
