@@ -23,6 +23,7 @@
 class Post::Devlog < ApplicationRecord
   include Postable
   include SoftDeletable
+  include Mentionable
   include SemanticSearchIndexable
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
   semantic_search_indexable type: "devlog"

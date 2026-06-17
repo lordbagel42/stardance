@@ -50,8 +50,8 @@
                   aria: { label: body_label },
                   data: { composer_target: "textarea",
                           emoji_picker_target: "textarea",
-                          controller: "submit-on-meta-enter",
-                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit" } %>
+                          controller: "submit-on-meta-enter mention-autocomplete",
+                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
             <div class="feed-composer__textarea"
                  contenteditable="true"
                  role="textbox"

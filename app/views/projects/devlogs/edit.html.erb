@@ -26,7 +26,9 @@
                 class: "devlog-edit__textarea",
                 rows: 4,
                 maxlength: Post::Devlog::BODY_MAX_LENGTH,
-                placeholder: "What are you working on?" %>
+                placeholder: "What are you working on?",
+                data: { controller: "mention-autocomplete",
+                        action: "keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
         </div>
 
         <% if @devlog.attachments.attached? %>

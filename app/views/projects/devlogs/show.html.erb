@@ -51,11 +51,11 @@
               <%= f.text_area :body,
                     id: "comment_body",
                     class: "devlog-detail__comment-textarea",
-                    placeholder: "Add a comment...",
+                    placeholder: "Add a comment... (type @ to mention someone)",
                     rows: 1,
                     maxlength: Comment::BODY_MAX_LENGTH,
-                    data: { controller: "submit-on-meta-enter",
-                            action: "keydown->submit-on-meta-enter#submit" } %>
+                    data: { controller: "submit-on-meta-enter mention-autocomplete",
+                            action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
             </div>
             <div class="devlog-detail__comment-actions">
               <%= render ActionButtonComponent.new(

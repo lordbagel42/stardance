@@ -181,6 +181,9 @@ application.register("lookout-recorder", LookoutRecorderController);
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
 
+import MentionAutocompleteController from "./mention_autocomplete_controller";
+application.register("mention-autocomplete", MentionAutocompleteController);
+
 import MissionGuideLanguageController from "./mission_guide_language_controller";
 application.register("mission-guide-language", MissionGuideLanguageController);
 

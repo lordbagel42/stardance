@@ -138,12 +138,12 @@
                       <div class="comment-modal__thread-right">
                         <%= f.text_area :body,
                               class: "comment-modal__textarea",
-                              placeholder: "Post your reply",
+                              placeholder: "Post your reply (type @ to mention someone)",
                               rows: 3,
                               maxlength: Comment::BODY_MAX_LENGTH,
                               data: { comment_modal_target: "textarea",
-                                      controller: "submit-on-meta-enter",
-                                      action: "keydown->submit-on-meta-enter#submit" } %>
+                                      controller: "submit-on-meta-enter mention-autocomplete",
+                                      action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
                       </div>
                     </div>
                     <div class="comment-modal__footer">

@@ -6,10 +6,12 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v6".freeze
+  RENDERER_VERSION      = "v7".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
+
+  MENTION_PATTERN = /(?<=\A|[\s(])@([a-zA-Z0-9_-]+)/
 
   BLANK_GUIDE_RESULT = GuideMarkdownRenderer::Result.new(html: "".freeze, outline: [].freeze).freeze
 
@@ -43,6 +45,7 @@ class MarkdownRenderer
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
       remove_images(doc) unless allow_images
       render_slack_emotes(doc)
+      render_mentions(doc)
       harden_links_and_images(doc)
       doc.to_html.freeze
     end
@@ -67,6 +70,7 @@ class MarkdownRenderer
     doc.css("a").each do |link|
       href = link["href"]
       next if href.blank? || href.start_with?("#")
+      next if href.start_with?("/@")
       link["target"] = "_blank"
       link["rel"]    = "noopener noreferrer"
     end
@@ -95,6 +99,22 @@ class MarkdownRenderer
         escaped_shortcode = ERB::Util.html_escape(":#{shortcode}:")
         escaped_src = ERB::Util.html_escape(src)
         %(<img src="#{escaped_src}" alt="#{escaped_shortcode}" title="#{escaped_shortcode}" class="slack-emote">)
+      end
+
+      node.replace(Nokogiri::HTML::DocumentFragment.parse(html))
+    end
+  end
+
+  def self.render_mentions(doc)
+    doc.traverse do |node|
+      next unless node.text?
+      next if node.ancestors.any? { |ancestor| %w[code pre kbd samp script style a].include?(ancestor.name) }
+      next unless node.text.match?(MENTION_PATTERN)
+
+      html = ERB::Util.html_escape(node.text).gsub(MENTION_PATTERN) do
+        username = Regexp.last_match(1)
+        escaped = ERB::Util.html_escape(username)
+        %(<a href="/@#{escaped}" class="mention">@#{escaped}</a>)
       end
 
       node.replace(Nokogiri::HTML::DocumentFragment.parse(html))
