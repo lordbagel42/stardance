@@ -260,6 +260,14 @@
                     </div>
                   </div>
                 <% end %>
+                <% if @hackatime_token_stale %>
+                  <div class="project-show__hackatime-stale">
+                    <span>Your Hackatime connection may be outdated — hours might be inaccurate.</span>
+                    <button type="button" class="project-show__hackatime-reconnect" onclick="document.getElementById('settings-modal').showModal()">
+                      Reconnect in settings →
+                    </button>
+                  </div>
+                <% end %>
               </div>
 
               <label class="project-show__field project-show__field--inline">
