@@ -3,6 +3,7 @@ class Home::FeedsController < ApplicationController
 
   FEED_LIMIT = 20
   RECOMMENDATION_POOL = 100 # after this, we fallback to SQL
+  TABS = %w[for_you following popular newest].freeze
   FeedPage = Struct.new(:page, :limit, :offset, :next, keyword_init: true)
 
   skip_before_action :remember_page
@@ -11,14 +12,28 @@ class Home::FeedsController < ApplicationController
   def show
     authorize :home, :feed?
     @feed_request_id = SecureRandom.uuid
+    @current_tab = TABS.include?(params[:tab]) ? params[:tab] : "for_you"
     load_feed
-    load_recommended_projects if first_page?
+    load_recommended_projects if first_page? && @current_tab == "for_you"
     render layout: false
   end
 
   private
 
   def load_feed
+    case @current_tab
+    when "following"  then load_following_feed
+    when "popular"    then paginate_and_filter(popular_scope, "popular")
+    when "newest"     then paginate_and_filter(newest_scope, "newest")
+    else                   load_for_you_feed
+    end
+
+    @liked_devlog_ids = liked_devlog_ids_for(@feed_posts)
+    @reposted_post_ids = reposted_post_ids_for(@feed_posts)
+    @show_post_views = Flipper.enabled?(:week_2_release, current_user)
+  end
+
+  def load_for_you_feed
     recommended = recommended_posts
     backfill = feed_scope.where.not(id: recommended.map(&:id))
 
@@ -27,9 +42,62 @@ class Home::FeedsController < ApplicationController
     @pagy.next = @pagy.page + 1 if has_next
 
     preload_feed_associations(@feed_posts)
-    @liked_devlog_ids = liked_devlog_ids_for(@feed_posts)
-    @reposted_post_ids = reposted_post_ids_for(@feed_posts)
-    @show_post_views = Flipper.enabled?(:week_2_release, current_user)
+  end
+
+  def load_following_feed
+    if current_user.blank?
+      @pagy = feed_pagy
+      @feed_posts = []
+      @feed_post_sources = {}
+      return
+    end
+
+    scope = feed_scope
+      .where(
+        "posts.user_id IN (:user_ids) OR posts.project_id IN (:project_ids)",
+        user_ids: current_user.following.select(:id),
+        project_ids: current_user.followed_projects.select(:id)
+      )
+      .where.not(user_id: current_user.id)
+      .reorder(created_at: :desc)
+
+    paginate_and_filter(scope, "following")
+  end
+
+  def paginate_and_filter(scope, source_label)
+    @pagy = feed_pagy
+    page_candidates = scope.offset(@pagy.offset).limit(@pagy.limit + 1).to_a
+    preload_feed_associations(page_candidates)
+    page_candidates.select! { |p| visible_post?(p) }
+
+    @feed_posts = page_candidates.first(@pagy.limit)
+    @feed_post_sources = @feed_posts.index_with { source_label }
+    @pagy.next = @pagy.page + 1 if page_candidates.size > @pagy.limit
+  end
+
+  def popular_scope
+    feed_scope
+      .where("posts.created_at >= ?", 7.days.ago)
+      .joins("LEFT JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND posts.postable_type = 'Post::Devlog'")
+      .reorder(Arel.sql(<<~SQL.squish))
+        (
+          COALESCE(post_devlogs.likes_count, 0) * 5
+          + COALESCE(posts.reposts_count, 0) * 3
+          + COALESCE(posts.views_count, 0)
+        ) DESC,
+        posts.created_at DESC
+      SQL
+  end
+
+  def newest_scope
+    feed_scope.reorder(created_at: :desc)
+  end
+
+  def visible_post?(post)
+    return false unless post.postable.present?
+    return true unless post.repost?
+
+    post.visible_repost_original_for?(current_user)
   end
 
   def recommended_posts

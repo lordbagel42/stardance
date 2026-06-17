@@ -139,6 +139,9 @@ application.register("feed-engagement", FeedEngagementController);
 import FeedKeyboardController from "./feed_keyboard_controller";
 application.register("feed-keyboard", FeedKeyboardController);
 
+import FeedTabsController from "./feed_tabs_controller";
+application.register("feed-tabs", FeedTabsController);
+
 import FileUploadController from "./file_upload_controller";
 application.register("file-upload", FileUploadController);
 

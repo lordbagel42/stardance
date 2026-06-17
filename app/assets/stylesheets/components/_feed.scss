@@ -1,3 +1,49 @@
+.feed-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &__tab {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 2px solid var(--color-space-border);
+    border-radius: 999px;
+    color: var(--color-space-text-muted);
+    background: transparent;
+    font: inherit;
+    font-size: calc(var(--font-size-s) * 1.15);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background 150ms ease,
+      border-color 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+      background: var(--color-space-surface-faint);
+      outline: none;
+    }
+
+    &--active {
+      color: var(--color-space-text);
+      background: var(--color-space-surface-soft);
+      border-color: var(--color-space-text-muted);
+    }
+  }
+}
+
 .feed-home {
   display: flex;
   flex-direction: column;
