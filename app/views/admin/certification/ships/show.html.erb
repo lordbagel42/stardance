@@ -27,6 +27,26 @@
 
     <div class="ship-review__body">
       <section class="ship-review__details">
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Screenshot</h2>
+          <% screenshots = @ship_event&.attachments.to_a %>
+          <% if screenshots.any? %>
+            <div class="ship-review__screenshots">
+              <% screenshots.each do |attachment| %>
+                <%= link_to url_for(attachment), target: "_blank", rel: "noopener", class: "ship-review__screenshot" do %>
+                  <% if attachment.variable? %>
+                    <%= image_tag attachment.variant(:large), alt: "Ship event screenshot", class: "ship-review__screenshot-image" %>
+                  <% else %>
+                    <%= image_tag attachment, alt: "Ship event screenshot", class: "ship-review__screenshot-image" %>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="ship-review__no-declaration">No screenshot was submitted with this ship event.</p>
+          <% end %>
+        </div>
+
         <% if @ship.project.description.present? %>
           <div class="ship-review__panel">
             <h2 class="ship-review__panel-title">Description</h2>

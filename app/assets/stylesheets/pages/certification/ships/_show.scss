@@ -125,6 +125,25 @@
     color: var(--muted);
   }
 
+  &__screenshots {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__screenshot {
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  &__screenshot-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #000;
+  }
+
   &__links,
   &__meta {
     display: grid;
