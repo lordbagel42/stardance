@@ -642,6 +642,7 @@ Rails.application.routes.draw do
       end
       resources :participants, only: [ :index, :show ] do
         member do
+          post :link_referral
           post :reject_referrals
           post :ban_participant
           post :ban_user
