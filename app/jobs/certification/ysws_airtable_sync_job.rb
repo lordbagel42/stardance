@@ -314,7 +314,13 @@ module Certification
 
       ysws_justification = review.summary_justification.presence
       goi_note = ai_summary.present? ? "\n#{ai_summary}" : ""
-      project_update_note = review.project.update_description.present? ? "\nProject update: #{review.project.update_description}" : ""
+      # Only a reship (a review preceded by an earlier review of the same
+      # project) carries a meaningful project update, so only surface it then.
+      project_update_note = if prior_review?(review) && review.project.update_description.present?
+        "\nProject update: #{review.project.update_description}"
+      else
+        ""
+      end
 
       justification = <<~JUSTIFICATION
         The user logged #{original_formatted} on hackatime. #{total_original_minutes == total_approved_minutes ? "" : "(This was adjusted to #{approved_formatted} after review.)"}.
@@ -491,6 +497,15 @@ module Certification
     rescue StandardError => e
       Rails.logger.error "[YswsAirtableSyncJob] double-dip check error: #{e.class}: #{e.message}"
       false
+    end
+
+    # True when an earlier review exists for the same project (i.e. this is a
+    # reship). Mirrors the prior-review lookup on the YSWS review page.
+    def prior_review?(review)
+      Certification::Ysws
+        .where(project_id: review.project_id)
+        .where("id < ?", review.id)
+        .exists?
     end
 
     def prior_ship_event(review)
