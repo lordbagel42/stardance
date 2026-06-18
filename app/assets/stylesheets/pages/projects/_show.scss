@@ -1433,6 +1433,7 @@ turbo-frame#project_hero {
     display: flex;
     flex-direction: column;
     max-height: 76vh;
+    overflow: hidden;
   }
 
   .feed-composer__chips,
@@ -1466,6 +1467,13 @@ turbo-frame#project_hero {
   }
 
   .feed-composer__textarea {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .md-preview {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
