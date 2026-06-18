@@ -314,10 +314,13 @@ module Certification
 
       ysws_justification = review.summary_justification.presence
       goi_note = ai_summary.present? ? "\n#{ai_summary}" : ""
-      # Only a reship (a review preceded by an earlier review of the same
-      # project) carries a meaningful project update, so only surface it then.
-      project_update_note = if prior_review?(review) && review.project.update_description.present?
+      # Surface the submitter's update description whenever there is one. Failing
+      # that, a reship (a review preceded by an earlier review of the same
+      # project) still notes the project update with a generic fallback.
+      project_update_note = if review.project.update_description.present?
         "\nProject update: #{review.project.update_description}"
+      elsif prior_review?(review)
+        "\nProject update: previously shipped to Stardance"
       else
         ""
       end
