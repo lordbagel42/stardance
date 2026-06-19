@@ -308,7 +308,7 @@
               <% end %>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span class="ship-queue__wait-badge <%= overdue ? 'ship-queue__wait-badge--overdue' : '' %>"><%= wait_days %>d</span>
-              <% if ship_event&.hours_at_ship.present? && ship_event.hours_ai_ship > 0 %>
+              <% if ship_event&.hours_at_ship.present? && ship_event.hours_at_ship > 0 %>
                 <span class="ship-queue__dot" aria-hidden="true">·</span>
                 <span class="ship-queue__hours"><%= number_with_precision(ship_event.hours_at_ship, precision: 1) %>h</span>
               <% end %>
