@@ -77,6 +77,7 @@ module Battlemage
 
     config.exceptions_app = self.routes
 
+    config.middleware.insert_after ActionDispatch::RemoteIp, Rack::Attack
     config.middleware.insert_before ActionDispatch::Static, ServeAvif
     config.middleware.insert_before ActionDispatch::Static, NoCacheErrors
   end
