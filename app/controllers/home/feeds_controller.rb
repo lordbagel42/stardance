@@ -96,17 +96,19 @@ class Home::FeedsController < ApplicationController
 
   def new_builders_scope
     first_devlog_ids = Post.where(postable_type: "Post::Devlog")
+      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id")
+      .where(post_devlogs: { deleted_at: nil })
       .group(:user_id)
       .select("MIN(posts.id)")
 
-    Post.of_devlogs(join: true)
+    feed_scope
+      .where(postable_type: "Post::Devlog")
+      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id")
       .where(id: first_devlog_ids)
       .where(post_devlogs: { deleted_at: nil })
       .where("post_devlogs.duration_seconds > 0")
       .where("posts.created_at >= ?", 7.days.ago)
-      .joins("LEFT JOIN users feed_authors ON feed_authors.id = posts.user_id")
-      .where("feed_authors.banned = FALSE")
-      .order(Arel.sql(<<~SQL.squish))
+      .reorder(Arel.sql(<<~SQL.squish))
         (post_devlogs.likes_count + post_devlogs.comments_count) ASC,
         posts.created_at DESC
       SQL
