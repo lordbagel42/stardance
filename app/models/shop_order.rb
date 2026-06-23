@@ -327,6 +327,15 @@ class ShopOrder < ApplicationRecord
     return unless shop_item
     return if frozen_item_price.present?
 
+    # Redeeming an approved mission prize is free regardless of the item's
+    # normal price: freezing 0 skips the balance check, the negative payout,
+    # and any refund-on-reject (all gated on frozen_item_price > 0), so a
+    # regular shop item given as a static prize never touches the ledger.
+    if redeeming_mission_submission.present?
+      self.frozen_item_price = 0
+      return
+    end
+
     # Use price_for_user so per-user pricing (e.g. the Outpost Ticket discount)
     # is enforced at purchase, not just displayed. Falls back to the regional
     # price for ordinary items.
