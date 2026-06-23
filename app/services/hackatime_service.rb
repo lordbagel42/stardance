@@ -146,6 +146,37 @@ class HackatimeService
       false
     end
 
+    def fetch_daily_seconds_for_projects(hackatime_uid, project_keys, start_date:, end_date:, access_token: nil)
+      return {} if hackatime_uid.blank? || project_keys.blank?
+
+      params = {
+        start: start_date,
+        end: end_date,
+        project: Array(project_keys).join(","),
+        _t: Time.now.to_i
+      }
+
+      response = summaries_request(hackatime_uid, params, access_token: access_token)
+
+      if response.success?
+        data = JSON.parse(response.body)
+        (data["data"] || []).each_with_object({}) do |day, hash|
+          date = Date.parse(day.dig("range", "date"))
+          seconds = (day["projects"] || []).sum { |p| p["total_seconds"].to_i }
+          hash[date] = seconds
+        end
+      else
+        Rails.logger.error "HackatimeService.fetch_daily_seconds_for_projects error: #{response.status} - #{response.body}"
+        {}
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService.fetch_daily_seconds_for_projects timeout: #{e.message}"
+      {}
+    rescue => e
+      Rails.logger.error "HackatimeService.fetch_daily_seconds_for_projects exception: #{e.message}"
+      {}
+    end
+
     private
 
       # Returns [response, fell_back] where fell_back is true when the
@@ -174,6 +205,20 @@ class HackatimeService
         end
 
         [ connection.get("users/#{hackatime_uid}/stats", params), access_token.present? ]
+      end
+
+      def summaries_request(hackatime_uid, params, access_token: nil)
+        if access_token.present?
+          api_key = resolve_api_key(hackatime_uid, access_token)
+          if api_key
+            response = connection.get("users/my/summaries", params) do |req|
+              req.headers["Authorization"] = "Bearer #{api_key}"
+            end
+            return response if response.success?
+          end
+        end
+
+        connection.get("users/#{hackatime_uid}/summaries", params)
       end
 
       def resolve_api_key(hackatime_uid, access_token)
