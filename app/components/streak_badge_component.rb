@@ -30,13 +30,8 @@ class StreakBadgeComponent < ViewComponent::Base
 
   def css_classes
     classes = ["streak-badge"]
-    classes << "streak-badge--shooting" if shooting?
     classes << "streak-badge--large" if @size == :large
     classes.join(" ")
-  end
-
-  def shooting?
-    streak_days >= 10
   end
 
   def icon_path
