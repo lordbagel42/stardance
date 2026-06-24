@@ -9,7 +9,12 @@ module User::Streakable
     StreakActivity.streak_date_for(Time.current, timezone)
   end
 
+  def current_streak
+    has_attribute?(:current_streak) ? super : 0
+  end
+
   def recalculate_streak!
+    return unless has_attribute?(:current_streak)
     update_column(:current_streak, calculate_current_streak)
   end
 
