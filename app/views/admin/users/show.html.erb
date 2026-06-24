@@ -272,6 +272,7 @@
             </div>
           </form>
         <% end %>
+      <% end %>
         <% if policy(@user).impersonate? && !impersonating? %>
           <%= button_to "Impersonate", admin_user_impersonation_path(@user), method: :post,
               data: { confirm: "Impersonate #{@user.display_name}?" } %>
@@ -454,7 +455,6 @@
         <button type="submit">Save Notes</button>
       </form>
     </div>
-  <% end %>
 
   <%= render Admin::PastOrdersComponent.new(user: @user, title: "Shop Orders") %>
   <%= render "admin/shared/ledger_log", entries: @user.ledger_entries, title: "Ledger History" %>
