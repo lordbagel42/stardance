@@ -36,6 +36,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   def show
     authorize @funding_request
     @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
+    @lapse_timelapses = lapse_timelapses_for_review
   end
 
   def update
@@ -47,6 +48,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
                   notice: "#{verb} funding for “#{@funding_request.project.title}.” That's #{count} reviewed today. Keep going!"
     else
       @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
+      @lapse_timelapses = lapse_timelapses_for_review
       render :show, status: :unprocessable_entity
     end
   end
@@ -71,6 +73,18 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def set_funding_request
     @funding_request = ::Certification::FundingRequest.find(params[:id])
+  end
+
+  # Lapse timelapses the builder recorded for *this* project, joined via the
+  # project's Hackatime keys and the submitter's Hackatime id so reviewers see
+  # the videos tied to the submission rather than the builder's whole library.
+  # Returns [] when the submitter has no Hackatime link or the project has no
+  # linked Hackatime keys.
+  def lapse_timelapses_for_review
+    LapseService.timelapses_for_project(
+      hackatime_user_id: @funding_request.owner&.hackatime_identity&.uid,
+      project_keys: @funding_request.project.hackatime_keys
+    )
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class

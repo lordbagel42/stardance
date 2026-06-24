@@ -62,6 +62,7 @@ class ShopOrder < ApplicationRecord
 
   include AASM
   include Ledgerable
+  include FunnelResyncTrigger
 
   belongs_to :user
   belongs_to :shop_item
