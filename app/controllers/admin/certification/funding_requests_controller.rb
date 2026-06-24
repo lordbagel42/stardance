@@ -37,6 +37,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     authorize @funding_request
     @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
     @lapse_timelapses = lapse_timelapses_for_review
+    @lookout_recordings = lookout_recordings_for_review
   end
 
   def update
@@ -49,6 +50,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     else
       @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
       @lapse_timelapses = lapse_timelapses_for_review
+      @lookout_recordings = lookout_recordings_for_review
       render :show, status: :unprocessable_entity
     end
   end
@@ -85,6 +87,12 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
       hackatime_user_id: @funding_request.owner&.hackatime_identity&.uid,
       project_keys: @funding_request.project.hackatime_keys
     )
+  end
+
+  # The project's finished Lookout screen recordings, refreshed live (Lookout's
+  # stored video URLs expire). Returns [] when the project has none.
+  def lookout_recordings_for_review
+    LookoutService.recordings_for_project(@funding_request.project)
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class

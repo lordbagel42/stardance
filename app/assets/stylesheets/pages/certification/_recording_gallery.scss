@@ -1,9 +1,9 @@
-// Lapse timelapse gallery on the hardware funding review (admin/certification/
+// Lapse timelapse + Lookout recording gallery on the hardware funding review (admin/certification/
 // funding_requests#show). Sits in the details column inside a .ship-review__panel
 // surface (shared with the ship-review layout), so only the gallery internals
 // need styling here.
 
-.lapse-timelapses {
+.recording-gallery {
   &__empty {
     margin: 0;
     color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));

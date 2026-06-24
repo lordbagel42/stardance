@@ -1,0 +1,16 @@
+<%# Lookout screen recordings for the project under review — mapped onto the
+    shared recording gallery. `recordings` comes from LookoutService. %>
+<% items = Array(recordings).map do |rec|
+     date = rec[:recorded_at].present? ? l(rec[:recorded_at].to_date, format: :short) : nil
+     {
+       video_url: rec[:video_url],
+       poster_url: rec[:thumbnail_url],
+       processing: "Still processing…",
+       name: rec[:mode].present? ? "#{rec[:mode].capitalize} recording" : "Screen recording",
+       sub: [ format_clock(rec[:duration]), date ].compact.join(" · ")
+     }
+   end %>
+<%= render "recording_gallery",
+      title: "Lookout recordings",
+      empty_text: "No Lookout recordings found for this project.",
+      items: items %>

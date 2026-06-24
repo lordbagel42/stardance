@@ -1,42 +1,16 @@
-<%# Lapse timelapse videos for the submitter — hardware review only. %>
-<%# `timelapses` is an array of Lapse API hashes (see LapseService). %>
-<div class="ship-review__panel lapse-timelapses">
-  <h2 class="ship-review__panel-title">Lapse timelapses</h2>
-
-  <% if timelapses.blank? %>
-    <p class="lapse-timelapses__empty">No Lapse timelapses found for this project.</p>
-  <% else %>
-    <ul class="lapse-timelapses__list">
-      <% timelapses.each do |tl| %>
-        <% hours, rem = tl[:duration].to_i.divmod(3600) %>
-        <% mins, secs = rem.divmod(60) %>
-        <% clock = hours.positive? ? format("%d:%02d:%02d", hours, mins, secs) : format("%d:%02d", mins, secs) %>
-        <li class="lapse-timelapses__item">
-          <div class="lapse-timelapses__media">
-            <% if tl[:playbackUrl].present? %>
-              <video controls playsinline preload="none"
-                     class="lapse-timelapses__video"
-                     poster="<%= tl[:thumbnailUrl] %>">
-                <source src="<%= tl[:playbackUrl] %>" type="video/mp4">
-                Your browser does not support the video tag.
-              </video>
-            <% else %>
-              <div class="lapse-timelapses__processing">
-                <%= tl[:visibility] == "FAILED_PROCESSING" ? "Processing failed" : "Still processing…" %>
-              </div>
-            <% end %>
-          </div>
-          <div class="lapse-timelapses__meta">
-            <span class="lapse-timelapses__name"><%= tl[:name].presence || "Untitled timelapse" %></span>
-            <span class="lapse-timelapses__sub">
-              <%= clock %>
-              <% if tl[:createdAt].present? %>
-                &middot; <%= l(Time.zone.at(tl[:createdAt].to_i / 1000).to_date, format: :short) %>
-              <% end %>
-            </span>
-          </div>
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
-</div>
+<%# Lapse timelapses for the project under review — mapped onto the shared
+    recording gallery. `timelapses` is an array of Lapse API hashes (LapseService). %>
+<% items = Array(timelapses).map do |tl|
+     date = tl[:createdAt].present? ? l(Time.zone.at(tl[:createdAt].to_i / 1000).to_date, format: :short) : nil
+     {
+       video_url: tl[:playbackUrl],
+       poster_url: tl[:thumbnailUrl],
+       processing: tl[:visibility] == "FAILED_PROCESSING" ? "Processing failed" : "Still processing…",
+       name: tl[:name].presence || "Untitled timelapse",
+       sub: [ format_clock(tl[:duration]), date ].compact.join(" · ")
+     }
+   end %>
+<%= render "recording_gallery",
+      title: "Lapse timelapses",
+      empty_text: "No Lapse timelapses found for this project.",
+      items: items %>
