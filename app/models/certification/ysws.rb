@@ -58,6 +58,35 @@ module Certification
 
     MIN_APPROVED_MINUTES = 6
 
+    # ---- Review-queue scopes ---------------------------------------------
+
+    # Correlated subquery counting a review's still-pending child devlog
+    # reviews — the "todo" work left on it. Reused by the count select and the
+    # "todo" column sort so they stay in sync.
+    TODO_DEVLOG_COUNT_SQL = <<~SQL.squish.freeze
+      (SELECT COUNT(*) FROM certification_devlog_reviews
+        WHERE certification_devlog_reviews.ysws_review_id = certification_ysws_reviews.id
+          AND certification_devlog_reviews.status = 'pending')
+    SQL
+
+    # Exposes a `todo_devlog_count` attribute on each loaded record without an
+    # N+1 — read it via #todo_devlog_count.
+    scope :with_todo_devlog_count, -> {
+      select("certification_ysws_reviews.*", "#{TODO_DEVLOG_COUNT_SQL} AS todo_devlog_count")
+    }
+
+    scope :by_project_type, ->(type) {
+      type == "unclassified" \
+        ? joins(:project).where(projects: { project_type: nil })
+        : joins(:project).where(projects: { project_type: type })
+    }
+
+    # Count of still-pending child devlog reviews. Available only on records
+    # loaded through .with_todo_devlog_count.
+    def todo_devlog_count
+      self[:todo_devlog_count].to_i
+    end
+
     # Estimated stardust a reviewer would earn per reviewed devlog. YSWS
     # reviewing isn't a real payout source yet (no stardust_earned column), so
     # the dashboard leaderboard uses this to show a projected payout.
