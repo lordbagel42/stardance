@@ -21,7 +21,6 @@ class Admin::PayoutReviewsController < Admin::ApplicationController
     @preview = @ship_event.payout_preview
     @votes = @ship_event.votes
                         .includes(:user, :events)
-                        .payout_countable
                         .order(:created_at)
   end
 
