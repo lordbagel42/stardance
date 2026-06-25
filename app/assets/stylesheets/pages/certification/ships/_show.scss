@@ -21,6 +21,13 @@
     &:focus-visible {
       color: var(--accent);
     }
+
+    // Secondary cross-link (e.g. to the combined hardware review) shown beside
+    // the back link.
+    &--alt {
+      margin-left: var(--space-m);
+      color: var(--color-brand-lilac);
+    }
   }
 
   &__header {
