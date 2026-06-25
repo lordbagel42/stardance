@@ -10,6 +10,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     @status = params[:status].presence_in(%w[pending approved returned all]) || "pending"
     @sort = params[:sort] == "newest" ? "newest" : "oldest"
     @search = params[:search].to_s.strip
+    @project_kind = params[:project_kind].presence_in(%w[all hackpad]) || "all"
     @from = parse_date(params[:from])
     @to = parse_date(params[:to])
 
@@ -19,10 +20,18 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     scope = scope.where("certification_funding_requests.created_at >= ?", @from.beginning_of_day) if @from
     scope = scope.where("certification_funding_requests.created_at <= ?", @to.end_of_day) if @to
     scope = apply_search(scope) if @search.present?
+    scope = scope.where(project_id: hackpad_project_ids) if @project_kind == "hackpad"
 
     @pagy, @funding_requests = pagy(:offset,
                                     scope.order(created_at: @sort == "newest" ? :desc : :asc),
                                     limit: 25)
+
+    # Which of the displayed rows are Hackpad projects (one query, so the view
+    # can flag them without an N+1 of Project#current_mission per row).
+    @hackpad_project_ids = hackpad_project_ids
+                             .where(project_id: @funding_requests.map(&:project_id))
+                             .pluck(:project_id)
+                             .to_set
 
     @stats = ::Certification::FundingRequest.dashboard_stats
     @lb_period = params[:lb].presence_in(%w[daily weekly alltime]) || "daily"
@@ -75,6 +84,16 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def set_funding_request
     @funding_request = ::Certification::FundingRequest.find(params[:id])
+  end
+
+  # Project ids whose current (active, non-detached) mission is the Hackpad
+  # mission — i.e. "hackpad projects" (mirrors Project#current_mission, which a
+  # project has at most one of). Used to filter the funding queue.
+  def hackpad_project_ids
+    Project::MissionAttachment.active
+      .joins(:mission)
+      .where(missions: { slug: "hackpad" })
+      .select(:project_id)
   end
 
   # Both fetches below fan out to live HTTP (per Hackatime key / Lookout session)
