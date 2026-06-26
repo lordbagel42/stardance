@@ -30,7 +30,10 @@
 
   items = items.sort_by { |item| item[:recorded_at] || Time.zone.at(0) }.reverse
 %>
-<%= render "recording_gallery",
+<%# Explicit path (not the bare "recording_gallery") so this partial also renders
+    correctly from controllers outside funding_requests, e.g. the combined
+    hardware review page. %>
+<%= render "admin/certification/funding_requests/recording_gallery",
       title: "Recordings",
       empty_text: "No recordings found for this project.",
       items: items %>

@@ -782,7 +782,6 @@
             <p class="ship-modal__mission-heading">
               Shipping to <strong><%= ship_mission.name %></strong>
             </p>
-            <%= hidden_field_tag :mission_payout_path, "static_prize" %>
             <% if ship_mission.submission_guide.present? %>
               <div class="ship-modal__mission-guide">
                 <%= render MarkdownContentComponent.new(markdown: ship_mission.submission_guide, flavor: :guide) %>
