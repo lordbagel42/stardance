@@ -78,6 +78,57 @@
   &__submit {
     margin-top: 0.75rem;
   }
+
+  &__funding {
+    border: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  &__funding-legend {
+    color: var(--color-brand-off-white);
+    font-family: var(--font-family-text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  &__funding-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__funding-option {
+    align-items: center;
+    background: rgba(8, 6, 31, 0.75);
+    border: 2px solid var(--color-space-border);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    transition: border-color 180ms ease;
+
+    &:hover,
+    &:has(:checked) {
+      border-color: var(--color-brand-lilac);
+    }
+  }
+
+  &__funding-radio {
+    accent-color: var(--color-brand-lilac);
+    flex-shrink: 0;
+    height: 1.1rem;
+    width: 1.1rem;
+  }
+
+  &__funding-label {
+    color: var(--color-brand-off-white);
+    font-family: var(--font-family-text);
+    font-size: 1rem;
+  }
 }
 
 // Missions step — grid of mission cards + escape hatch.

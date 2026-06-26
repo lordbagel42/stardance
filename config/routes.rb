@@ -842,6 +842,8 @@ Rails.application.routes.draw do
   namespace :projects do
     get  "setup",               to: "setup#idea",          as: :setup
     post "setup/idea",          to: "setup#submit_idea",   as: :setup_submit_idea
+    get  "setup/project_type",  to: "setup#project_type",  as: :setup_project_type
+    post "setup/project_type",  to: "setup#submit_project_type", as: :setup_submit_project_type
     get  "setup/name",          to: "setup#name",          as: :setup_name
     post "setup/name",          to: "setup#submit_name",   as: :setup_submit_name
     get  "setup/missions",      to: "setup#missions",      as: :setup_missions

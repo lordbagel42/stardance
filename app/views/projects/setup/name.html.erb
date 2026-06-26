@@ -27,6 +27,22 @@
                         maxlength: Projects::SetupController::MAX_DESCRIPTION_LENGTH,
                         class: "project-setup-name__textarea" %>
 
+      <% if @is_hardware %>
+        <fieldset class="project-setup-name__funding">
+          <legend class="project-setup-name__funding-legend">Do you need funding to buy parts?</legend>
+          <div class="project-setup-name__funding-options">
+            <label class="project-setup-name__funding-option">
+              <%= radio_button_tag :needs_funding, "yes", true, class: "project-setup-name__funding-radio" %>
+              <span class="project-setup-name__funding-label">Yes — I need funding for parts</span>
+            </label>
+            <label class="project-setup-name__funding-option">
+              <%= radio_button_tag :needs_funding, "no", false, class: "project-setup-name__funding-radio" %>
+              <span class="project-setup-name__funding-label">No — I already have what I need</span>
+            </label>
+          </div>
+        </fieldset>
+      <% end %>
+
       <%= render SpecialActionButtonComponent.new(
             text: "Continue",
             type: :submit,

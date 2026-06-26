@@ -1,6 +1,8 @@
 class ProjectSetupPolicy < ApplicationPolicy
   def idea?         = signed_in_any?
   def submit_idea?  = signed_in_any?
+  def project_type? = signed_in_any?
+  def submit_project_type? = signed_in_any?
   def name?         = signed_in_any?
   def submit_name?  = signed_in_any?
   def missions?     = signed_in_any?

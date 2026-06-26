@@ -25,7 +25,7 @@ class Projects::SetupController < ApplicationController
     case params[:idea].to_s
     when "yes"
       track_event "project_setup_started", { has_idea: true }
-      redirect_to projects_setup_name_path
+      redirect_to projects_setup_project_type_path
     when "no"
       track_event "project_setup_started", { has_idea: false }
       redirect_to projects_setup_missions_path
@@ -34,8 +34,28 @@ class Projects::SetupController < ApplicationController
     end
   end
 
+  def project_type
+    authorize :project_setup
+  end
+
+  def submit_project_type
+    authorize :project_setup
+
+    case params[:project_type].to_s
+    when "software"
+      session[:setup_is_hardware] = false
+      redirect_to projects_setup_name_path
+    when "hardware"
+      session[:setup_is_hardware] = true
+      redirect_to projects_setup_name_path
+    else
+      redirect_to projects_setup_project_type_path, alert: "Please pick one."
+    end
+  end
+
   def name
     authorize :project_setup
+    @is_hardware = session[:setup_is_hardware] == true
   end
 
   MAX_TITLE_LENGTH = 120
@@ -58,7 +78,11 @@ class Projects::SetupController < ApplicationController
     end
 
     project = find_or_create_setup_project!
-    project.update!(title: title, description: description.presence)
+    is_hardware = session.delete(:setup_is_hardware)
+    hardware_stage = if is_hardware
+      params[:needs_funding].to_s == "no" ? "build" : "design"
+    end
+    project.update!(title: title, description: description.presence, hardware_stage: hardware_stage)
     redirect_to next_gate_after_details_path
   end
 

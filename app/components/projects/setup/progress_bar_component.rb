@@ -6,10 +6,11 @@ module Projects
 
       # Per-action mapping into the visible 3-phase progress.
       ACTION_TO_STEP = {
-        idea:     :idea,
-        name:     :details,
-        missions: :details,
-        link:     :link
+        idea:         :idea,
+        project_type:     :idea,
+        name:             :details,
+        missions:     :details,
+        link:         :link
       }.freeze
 
       attr_reader :action
@@ -46,6 +47,8 @@ module Projects
         case action
         when :idea, :link
           append_back_param(helpers.back_path)
+        when :project_type
+          helpers.projects_setup_path(back: 1)
         when :name, :missions
           helpers.projects_setup_path(back: 1)
         end
