@@ -46,8 +46,13 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       {
         name: :hackatime,
         scope: "profile read",
-        skip_setup_flow: ->(env) { Rack::Request.new(env).params["skip_setup_flow"] },
-        authorize_options: %i[scope skip_setup_flow],
+        setup: lambda { |env|
+          request = Rack::Request.new(env)
+          if request.params.key?("skip_setup_flow")
+            env["omniauth.strategy"].options[:authorize_params] ||= {}
+            env["omniauth.strategy"].options[:authorize_params][:skip_setup_flow] = request.params["skip_setup_flow"]
+          end
+        },
         client_options: {
           site:          "https://hackatime.hackclub.com",
           authorize_url: "/oauth/authorize",
