@@ -359,7 +359,7 @@
         </header>
       <% end %>
       <% unless @hackatime_linked %>
-        <form id="hackatime-connect-form" method="post" action="/auth/hackatime" hidden>
+        <form id="hackatime-connect-form" method="post" action="/auth/hackatime<%= "?skip_setup_flow" if @project.hardware? %>" hidden>
           <input type="hidden" name="origin" value="<%= request.fullpath %>">
           <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
         </form>
@@ -644,7 +644,7 @@
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
           <% end %>
-          <%= button_to "/auth/hackatime",
+          <%= button_to "/auth/hackatime#{"?skip_setup_flow" if @project.hardware?}",
                         method: :post,
                         params: { origin: request.fullpath },
                         class: "action-btn action-btn--large action-btn--primary project-show__hackatime-cta",
