@@ -745,8 +745,10 @@
       <% time_kind = @project.hardware? ? "timelapse" : "coding" %>
       <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
         <header class="project-show__onboarding-header">
-          <% if onboarding_mission&.icon&.attached? %>
-            <%= image_tag onboarding_mission.icon, alt: "", class: "project-show__onboarding-image" %>
+          <% onboarding_banner = onboarding_mission&.banner&.attached? %>
+          <% onboarding_image = onboarding_banner ? onboarding_mission.banner : onboarding_mission&.icon %>
+          <% if onboarding_image&.attached? %>
+            <%= image_tag onboarding_image, alt: "", class: class_names("project-show__onboarding-image", "project-show__onboarding-image--icon" => !onboarding_banner) %>
           <% end %>
 
           <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">

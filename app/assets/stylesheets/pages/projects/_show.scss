@@ -894,10 +894,15 @@ turbo-frame#project_hero {
 
 .project-show__onboarding-image {
   display: block;
-  width: 240px;
+  width: 100%;
   max-width: 100%;
   height: auto;
   margin: 0 auto 16px;
+  border-radius: 12px;
+}
+
+.project-show__onboarding-image--icon {
+  width: 240px;
 }
 
 .project-show__onboarding-header-title {
