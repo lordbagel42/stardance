@@ -19,6 +19,18 @@ module User::HackatimeSync
     all_time_coding_seconds >= 3600
   end
 
+  # Name of the Hackatime project to feature for this user: the one with the
+  # most seconds logged, falling back to any linked project when nothing has
+  # time yet, else nil. Ties break by name (not randomly) so the value stays
+  # stable across syncs — real randomness would churn it and re-push to Loops
+  # every run. Reuses the memoized stats fetch, so no extra Hackatime call.
+  def most_active_hackatime_project
+    projects = try_sync_hackatime_data!&.dig(:projects)
+    return if projects.blank?
+
+    projects.max_by { |name, seconds| [ seconds, name ] }&.first
+  end
+
   def try_sync_hackatime_data!(force: false)
     return @hackatime_data if @hackatime_data && !force
     return nil unless hackatime_identity

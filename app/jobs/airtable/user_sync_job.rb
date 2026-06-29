@@ -27,6 +27,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "has_some_role_of_access" => user.roles.any?,
       "hours" => user.all_time_coding_seconds&.fdiv(3600),
       "last_hackatime_activity_on" => user.last_hackatime_activity_on,
+      "most_active_project" => user.most_active_hackatime_project,
       "verification_status" => user.verification_status.to_s,
       "funnel_stage" => user.funnel_stage.to_s,
       "funnel_stage_entered_at" => user.funnel_stage_entered_at,
