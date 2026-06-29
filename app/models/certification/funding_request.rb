@@ -318,9 +318,14 @@ module Certification
 
       case status.to_sym
       when :approved
-        owner.dm_user("Your hardware project '#{project.title}' was approved for $#{final_amount_dollars} in funding! It's switched to the build phase. Log your build hours with a timelapse and ship when you're ready.")
+        msg = if final_amount_cents.to_i > 0
+          "Your design review for '#{project.title}' was approved — you've been granted $#{final_amount_dollars} to buy your parts! Your project is now in the build phase. Log your build hours and ship when you're ready."
+        else
+          "Your design review for '#{project.title}' was approved! Your project is now in the build phase. Log your build hours and ship when you're ready."
+        end
+        owner.dm_user(msg)
       when :returned
-        msg = "Your funding request for '#{project.title}' needs changes before it can be approved."
+        msg = "Your design review for '#{project.title}' needs changes before it can be approved."
         msg += "\n\n#{feedback}" if feedback.present?
         owner.dm_user(msg)
       end

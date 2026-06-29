@@ -175,11 +175,11 @@
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project stage (locked)">
                     <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">
                       <% if fr.approved? %>
-                        Design Stage — $<%= fr.final_amount_dollars %> approved
+                        Design Stage — review approved<%= " ($#{fr.final_amount_dollars})" if fr.final_amount_cents.to_i > 0 %>
                       <% elsif fr.pending? %>
-                        Design Stage — $<%= fr.requested_amount_dollars %> under review
+                        Design Stage — review in progress
                       <% else %>
-                        Design Stage — funding returned
+                        Design Stage — review returned
                       <% end %>
                     </span>
                     <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">
@@ -570,7 +570,7 @@
           <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
             <% if @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
-                    text: "Funding request under review",
+                    text: "Design review in progress",
                     variant: :secondary,
                     type: :button,
                     disabled: :soft,

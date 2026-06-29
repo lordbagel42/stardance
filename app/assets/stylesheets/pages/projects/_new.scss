@@ -467,12 +467,6 @@
   color: var(--color-space-text-muted);
 }
 
-.project-creation__stage-chooser--sub {
-  margin-top: var(--space-s);
-  padding-top: var(--space-s);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 // ── Mobile ───────────────────────────────────────────────────────────────────
 
 @media (max-width: 640px) {

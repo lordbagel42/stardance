@@ -16,9 +16,9 @@ class Projects::FundingRequestsController < ApplicationController
 
     track_event "funding_requested", { project_id: @project.id, complexity_tier: params[:complexity_tier] }
     redirect_to project_path(@project),
-                notice: "Funding request submitted! We'll review your design and get back to you."
+                notice: "Design submitted for review! We'll get back to you soon."
   rescue ActiveRecord::RecordNotUnique
-    redirect_to project_path(@project), alert: "You already have a funding request under review."
+    redirect_to project_path(@project), alert: "You already have a design review in progress."
   rescue ActiveRecord::RecordInvalid => e
     redirect_back fallback_location: project_path(@project),
                   alert: e.record.errors.full_messages.to_sentence
