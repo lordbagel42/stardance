@@ -24,9 +24,15 @@ $outpost-teal: #34e0ba;
     color: #fff;
     font-weight: 800;
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
       filter: brightness(1.05);
+    }
+
+    &:disabled {
+      background: rgba($outpost-ink, 0.15);
+      color: rgba($outpost-ink, 0.35);
+      cursor: not-allowed;
     }
   }
 
@@ -35,6 +41,67 @@ $outpost-teal: #34e0ba;
     border: 2px solid rgba($outpost-ink, 0.25);
     color: $outpost-ink;
   }
+}
+
+// "Do you need funding?" question step
+.funding-modal__question-heading {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-align: center;
+  color: $outpost-ink;
+}
+
+.funding-modal__question-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.funding-modal__question-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+
+  &--yes {
+    background: linear-gradient(180deg, $outpost-gold, $outpost-orange);
+    border: none;
+    color: #fff;
+  }
+
+  &--no {
+    background: rgba($outpost-ink, 0.08);
+    border: 2px solid rgba($outpost-ink, 0.2);
+    color: $outpost-ink;
+  }
+}
+
+.funding-modal__question-cancel {
+  display: flex;
+  justify-content: center;
+}
+
+.funding-modal__no-funding-note {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, $outpost-teal 22%, #fff);
+  border: 1px solid color-mix(in srgb, $outpost-teal 55%, #fff);
+  font-size: 0.95rem;
+  color: #0c6b58;
+  line-height: 1.45;
 }
 
 .funding-modal__header {
@@ -196,16 +263,39 @@ $outpost-teal: #34e0ba;
 
 .funding-modal__bom-check {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.6rem;
   margin-bottom: 1rem;
-  font-weight: 600;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid rgba($outpost-ink, 0.2);
+  border-radius: 10px;
+  background: rgba($outpost-ink, 0.04);
   font-size: 0.9rem;
   color: $outpost-ink;
   cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+
+  &:has(input:checked) {
+    border-color: $outpost-orange;
+    background: color-mix(in srgb, $outpost-orange 8%, #fff);
+  }
+
+  &--required {
+    border-color: rgba($outpost-orange, 0.6);
+    background: color-mix(in srgb, $outpost-orange 5%, #fff);
+  }
 
   input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    width: 1.1rem;
+    height: 1.1rem;
     accent-color: $outpost-orange;
+    cursor: pointer;
+  }
+
+  strong {
+    color: $outpost-orange;
   }
 
   code {
@@ -214,6 +304,11 @@ $outpost-teal: #34e0ba;
     border-radius: 4px;
     font-size: 0.85em;
   }
+}
+
+// Hide the "up to $X" funding max when user selected the no-funding path
+.funding-modal__tiers--hide-max .funding-tier__max {
+  display: none;
 }
 
 // Inline tier-max validation error (shown on cream — red reads fine).

@@ -206,6 +206,18 @@ turbo-frame#project_hero {
     background: var(--color-brand-orange-soft);
     color: var(--color-brand-orange);
   }
+
+  &--design {
+    background: rgba(#EBB7FF, 0.15);
+    color: #EBB7FF;
+    border: 1px solid rgba(#EBB7FF, 0.35);
+  }
+
+  &--build {
+    background: rgba(#81FFFF, 0.12);
+    color: #81FFFF;
+    border: 1px solid rgba(#81FFFF, 0.3);
+  }
 }
 
 .project-show__title-input {

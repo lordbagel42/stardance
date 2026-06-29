@@ -115,15 +115,45 @@
             </button>
           <% end %>
 
-          <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
-            <%= hidden_field_tag "project[title]", "Untitled" %>
-            <%= hidden_field_tag "project[hardware_stage]", "build" %>
-            <button type="submit" class="project-creation__stage-option">
+          <div class="project-creation__stage-form">
+            <button type="button"
+                    class="project-creation__stage-option"
+                    data-action="project-builder#showNoFundingOptions"
+                    data-project-builder-target="noFundingBtn"
+                    aria-expanded="false"
+                    aria-controls="project-creation-no-funding-chooser">
               <span class="project-creation__stage-label">I don't need Funding</span>
-              <span class="project-creation__stage-title">I don't need funding for my project</span>
-              <span class="project-creation__stage-subtext">I already have my parts and am ready to start building</span>
+              <span class="project-creation__stage-title">Hack Club provides a kit or I already have parts</span>
+              <span class="project-creation__stage-subtext">Tell us which phase you're in →</span>
             </button>
-          <% end %>
+          </div>
+        </div>
+
+        <div id="project-creation-no-funding-chooser"
+             class="project-creation__stage-chooser project-creation__stage-chooser--sub"
+             data-project-builder-target="subChooser"
+             inert>
+          <div class="project-creation__stage-chooser-inner">
+            <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
+              <%= hidden_field_tag "project[title]", "Untitled" %>
+              <%= hidden_field_tag "project[hardware_stage]", "design" %>
+              <button type="submit" class="project-creation__stage-option">
+                <span class="project-creation__stage-label">Still Designing</span>
+                <span class="project-creation__stage-title">I'm still working on my design</span>
+                <span class="project-creation__stage-subtext">Post devlogs and submit your design when it's ready</span>
+              </button>
+            <% end %>
+
+            <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
+              <%= hidden_field_tag "project[title]", "Untitled" %>
+              <%= hidden_field_tag "project[hardware_stage]", "build" %>
+              <button type="submit" class="project-creation__stage-option">
+                <span class="project-creation__stage-label">Ready to Build</span>
+                <span class="project-creation__stage-title">I have my parts and I'm ready to build</span>
+                <span class="project-creation__stage-subtext">Start logging build hours right away</span>
+              </button>
+            <% end %>
+          </div>
         </div>
       </div>
     </section>

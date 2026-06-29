@@ -169,7 +169,7 @@
               <div class="project-show__field project-show__field--inline"
                    data-project-type-target="stageSection"
                    <%= "hidden" unless @project.hardware? %>>
-                <span>Project stage <%= render "projects/help_tooltip", text: "\"I need Funding\" means you're still designing and need a grant to buy parts. Submit your design for funding to move to building. \"I don't need Funding\" means you already have your parts and are building." %></span>
+                <span>Project stage <%= render "projects/help_tooltip", text: "\"Design Stage\" means you're working on your design. Submit your design to move to building. \"Build Stage\" means you have your parts and are actively building." %></span>
                 <% if @project.has_any_funding_request? %>
                   <% fr = @project.latest_funding_request %>
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project stage (locked)">
@@ -192,11 +192,11 @@
                   <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
                     <label class="project-show__stage-choice">
                       <%= form.radio_button :hardware_stage, "design", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                      <span class="project-show__stage-choice-label">I need Funding</span>
+                      <span class="project-show__stage-choice-label">Design Stage</span>
                     </label>
                     <label class="project-show__stage-choice">
                       <%= form.radio_button :hardware_stage, "build", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                      <span class="project-show__stage-choice-label">I don't need Funding</span>
+                      <span class="project-show__stage-choice-label">Build Stage</span>
                     </label>
                   </div>
                 <% end %>
@@ -386,6 +386,13 @@
                   <h1 class="project-show__title"><%= @project.title %></h1>
                   <% if @project.hardware? %>
                     <span class="project-show__tag project-show__tag--hardware">Hardware</span>
+                    <% if Flipper.enabled?(:hardware_flow, current_user) %>
+                      <% if @project.design_stage? %>
+                        <span class="project-show__tag project-show__tag--stage project-show__tag--design">Design Stage</span>
+                      <% elsif @project.build_stage? %>
+                        <span class="project-show__tag project-show__tag--stage project-show__tag--build">Build Stage</span>
+                      <% end %>
+                    <% end %>
                   <% end %>
                 </div>
                 <div class="project-show__byline">
@@ -575,7 +582,7 @@
                   ) %>
             <% elsif !@project.info_complete? %>
               <%= render ActionButtonComponent.new(
-                    text: "Submit Design to Get Project Funding",
+                    text: "Submit Design",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
@@ -588,7 +595,7 @@
                   ) %>
             <% else %>
               <%= render ActionButtonComponent.new(
-                    text: "Submit Design to Get Project Funding",
+                    text: "Submit Design",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
@@ -1096,21 +1103,52 @@
               class="ship-modal ship-modal--post funding-modal--outpost"
               data-controller="modal"
               aria-label="Request project funding">
+        <div class="ship-modal__panel funding-modal__panel" id="funding-modal-question-<%= @project.id %>">
+          <header class="funding-modal__header">
+            <%= image_tag "outpost.png", alt: "Outpost", class: "funding-modal__logo" %>
+            <p class="funding-modal__tagline">The greatest hardware adventure yet.</p>
+          </header>
+
+          <p class="funding-modal__question-heading">Do you need funding to buy parts?</p>
+
+          <div class="funding-modal__question-btns">
+            <button type="button"
+                    class="funding-modal__question-btn funding-modal__question-btn--yes"
+                    onclick="fundingShowForm(<%= @project.id.to_json %>, true)">
+              Yes, I need Hack Club to fund my parts
+            </button>
+            <button type="button"
+                    class="funding-modal__question-btn funding-modal__question-btn--no"
+                    onclick="fundingShowForm(<%= @project.id.to_json %>, false)">
+              No, I already have my parts or Hack Club is providing a kit
+            </button>
+          </div>
+
+          <div class="funding-modal__question-cancel">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+          </div>
+        </div>
+
         <%= form_with url: project_funding_request_path(@project),
                       method: :post,
                       data: { turbo: false },
-                      html: { class: "ship-modal__form", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, tier_discounts: Certification::FundingRequest.tier_discount_summary.to_json } } do |form| %>
+                      html: { id: "funding-modal-form-#{@project.id}", class: "ship-modal__form", style: "display:none", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, tier_discounts: Certification::FundingRequest.tier_discount_summary.to_json } } do |form| %>
+          <%= form.hidden_field :requested_amount, value: "", id: "funding-modal-amount-#{@project.id}" %>
           <div class="ship-modal__panel funding-modal__panel">
             <header class="funding-modal__header">
               <%= image_tag "outpost.png", alt: "Outpost", class: "funding-modal__logo" %>
-              <p class="funding-modal__tagline">The greatest hardware adventure yet. Get your build funded.</p>
+              <p class="funding-modal__tagline" id="funding-modal-tagline-<%= @project.id %>"></p>
             </header>
 
-            <fieldset class="funding-modal__tiers">
+            <fieldset class="funding-modal__tiers" id="funding-modal-tiers-<%= @project.id %>">
               <legend>Pick your complexity tier</legend>
               <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
                 <label class="funding-tier">
-                  <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
+                  <%= form.radio_button :complexity_tier, tier_id, class: "funding-tier__input", required: true, onchange: "fundingValidate(this.form)" %>
                   <span class="funding-tier__badge funding-tier__badge--<%= t[:code].downcase %>"><%= t[:code] %></span>
                   <span class="funding-tier__info">
                     <span class="funding-tier__name"><%= t[:name] %></span>
@@ -1120,63 +1158,135 @@
                 </label>
               <% end %>
             </fieldset>
-
-            <label class="funding-modal__amount">
-              <span>Amount requested ($)</span>
-              <%= form.number_field :requested_amount, min: 1, step: 1, required: true, class: "funding-modal__amount-input", oninput: "fundingValidate(this.form)" %>
-            </label>
-            <p class="funding-request__error" role="alert" hidden></p>
             <p class="funding-modal__discount" role="status" hidden></p>
 
-            <p class="funding-modal__note">
-              Get your design approved to earn Stardust toward the Outpost Ticket — higher tiers cover more of it.
-              <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-            </p>
+            <div id="funding-modal-funded-fields-<%= @project.id %>">
+              <label class="funding-modal__amount">
+                <span>Amount requested ($)</span>
+                <input type="number" name="requested_amount_display" min="0" step="1"
+                       class="funding-modal__amount-input"
+                       oninput="fundingValidate(this.form)">
+              </label>
+              <p class="funding-request__error" role="alert" hidden></p>
 
-            <label class="funding-modal__bom-check">
-              <input type="checkbox" required onchange="fundingValidate(this.form)">
-              <span>I have a <code>BOM.csv</code> in my repository</span>
-            </label>
+              <p class="funding-modal__note">
+                Get your design approved to earn Stardust toward the Outpost Ticket — higher tiers cover more of it.
+                <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
+              </p>
+
+              <label class="funding-modal__bom-check" id="funding-modal-bom-<%= @project.id %>">
+                <input type="checkbox" onchange="fundingValidate(this.form)">
+                <span>
+                  <strong>Required:</strong> I have a <code>BOM.csv</code> in my repository
+                </span>
+              </label>
+            </div>
+
+            <div id="funding-modal-no-funding-note-<%= @project.id %>" hidden>
+              <p class="funding-modal__no-funding-note">
+                We'll submit your design for review with <strong>$0 requested</strong>. Once approved, your project moves to the build stage and you'll earn the Outpost Ticket discount for your tier.
+              </p>
+            </div>
 
             <div class="ship-modal__actions">
               <button type="button"
                       class="ship-modal__btn ship-modal__btn--secondary"
-                      onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
-                Cancel
+                      onclick="fundingResetToQuestion(<%= @project.id.to_json %>)">
+                Back
               </button>
-              <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
+              <%= form.submit "Submit design", disabled: true, class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
             </div>
           </div>
         <% end %>
       </dialog>
       <script>
+        function fundingShowForm(projectId, needsFunding) {
+          var question = document.getElementById("funding-modal-question-" + projectId);
+          var form = document.getElementById("funding-modal-form-" + projectId);
+          var amountInput = document.getElementById("funding-modal-amount-" + projectId);
+          var tagline = document.getElementById("funding-modal-tagline-" + projectId);
+          var fundedFields = document.getElementById("funding-modal-funded-fields-" + projectId);
+          var noFundingNote = document.getElementById("funding-modal-no-funding-note-" + projectId);
+          var submit = form ? form.querySelector('[type="submit"]') : null;
+
+          if (!question || !form) return;
+          question.style.display = "none";
+          form.style.display = "";
+          form.dataset.noFunding = needsFunding ? "" : "true";
+
+          var tiers = document.getElementById("funding-modal-tiers-" + projectId);
+          if (needsFunding) {
+            tagline.textContent = "Get your build funded.";
+            fundedFields.removeAttribute("hidden");
+            noFundingNote.setAttribute("hidden", "");
+            amountInput.value = "";
+            if (tiers) tiers.classList.remove("funding-modal__tiers--hide-max");
+            if (submit) submit.disabled = true;
+            fundingValidate(form);
+          } else {
+            tagline.textContent = "Submit your design for approval.";
+            fundedFields.setAttribute("hidden", "");
+            noFundingNote.removeAttribute("hidden");
+            amountInput.value = "0";
+            if (tiers) tiers.classList.add("funding-modal__tiers--hide-max");
+            var tier = form.querySelector('[name="complexity_tier"]:checked');
+            if (submit) submit.disabled = !tier;
+            fundingValidate(form);
+          }
+        }
+
+        function fundingResetToQuestion(projectId) {
+          var question = document.getElementById("funding-modal-question-" + projectId);
+          var form = document.getElementById("funding-modal-form-" + projectId);
+          if (!question || !form) return;
+          question.style.display = "";
+          form.style.display = "none";
+        }
+
         function fundingValidate(form) {
           if (!form) return;
+          var noFunding = form.dataset.noFunding === "true";
           var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
           var discounts = JSON.parse(form.dataset.tierDiscounts || "{}");
           var tier = form.querySelector('[name="complexity_tier"]:checked');
-          var amountEl = form.querySelector('[name="requested_amount"]');
-          var err = form.querySelector(".funding-request__error");
+          var amountInput = form.querySelector('[name="requested_amount"]');
           var discountEl = form.querySelector(".funding-modal__discount");
           var submit = form.querySelector('[type="submit"]');
-          if (!amountEl || !err || !submit) return;
-          var amount = parseFloat(amountEl.value);
-          var max = tier ? maxes[tier.value] : null;
-          if (max != null) amountEl.max = max;
+          if (!submit || !amountInput) return;
 
-          var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
-          var bomMissing = bomCheck && !bomCheck.checked;
-          var over = max != null && !isNaN(amount) && amount > max;
-          err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
-          err.hidden = !over;
-          submit.disabled = over || bomMissing;
+          if (noFunding) {
+            amountInput.value = "0";
+            submit.disabled = !tier;
+          } else {
+            var displayAmountEl = form.querySelector('[name="requested_amount_display"]');
+            var err = form.querySelector(".funding-request__error");
+            if (!displayAmountEl || !err) return;
+
+            var amount = parseFloat(displayAmountEl.value);
+            var max = tier ? maxes[tier.value] : null;
+            if (max != null) displayAmountEl.max = max;
+            amountInput.value = amountMissing ? "" : amount;
+
+            var bomLabel = form.querySelector('.funding-modal__bom-check');
+            var bomCheck = bomLabel ? bomLabel.querySelector('input[type="checkbox"]') : null;
+            var noTier = !tier;
+            var amountMissing = displayAmountEl.value === "" || isNaN(amount);
+            var over = max != null && !isNaN(amount) && amount > max;
+            var bomMissing = bomCheck && !bomCheck.checked;
+            err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
+            err.hidden = !over;
+            submit.disabled = noTier || amountMissing || over || bomMissing;
+            if (bomLabel) {
+              bomLabel.classList.toggle("funding-modal__bom-check--required", !noTier && !amountMissing && !over && bomMissing);
+            }
+          }
 
           if (discountEl) {
             var d = tier ? discounts[tier.value] : null;
             if (d) {
               discountEl.textContent = d.pct >= 100
-                ? "Approved at " + d.code + " tier = a free Outpost Ticket (✦ " + d.sd + ", 100% off)."
-                : "Approved at " + d.code + " tier = " + d.pct + "% off the Outpost Ticket (✦ " + d.sd + ").";
+                ? d.code + " tier approval = free Outpost Ticket (✦" + d.sd + " stardust discount, 100% off)."
+                : d.code + " tier approval = " + d.pct + "% off the Outpost Ticket (✦" + d.sd + " stardust discount).";
               discountEl.hidden = false;
             } else {
               discountEl.hidden = true;
