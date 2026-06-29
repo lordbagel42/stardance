@@ -87,6 +87,12 @@ production:
     concurrency: 1
     description: "Recalculate duration_seconds for all projects"
 
+  sync_pending_lookout_sessions:
+    class: SyncPendingLookoutSessionsJob
+    schedule: every 5 minutes
+    concurrency: 1
+    description: "Re-poll recent non-terminal Lookout sessions so recordings finalize even if the recorder tab was closed"
+
   sync_pyramid_enriched_refs:
     class: SyncPyramidEnrichedRefsJob
     schedule: every hour

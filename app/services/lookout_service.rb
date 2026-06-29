@@ -16,6 +16,15 @@ class LookoutService
   REVIEW_READ_TIMEOUT = 6
   MAX_REVIEW_RECORDINGS = 12
 
+  # Bounds for the token-authenticated client API (status/duration/video polling).
+  # Faraday's default adapter has no timeout, so without these a single hung
+  # Lookout response blocks the caller indefinitely — fine for a one-off browser
+  # poll, but SyncPendingLookoutSessionsJob makes up to 400 sequential calls per
+  # run, so one stuck call would stall the whole run (and back up behind a
+  # concurrency-1, every-5-minutes schedule).
+  CLIENT_OPEN_TIMEOUT = 5
+  CLIENT_READ_TIMEOUT = 10
+
   class << self
     # Server-to-server. Returns the parsed body ({ token:, sessionId:,
     # sessionUrl: }) or nil on failure.
@@ -172,6 +181,8 @@ class LookoutService
 
     def client_connection
       @client_connection ||= Faraday.new(url: BASE_URL) do |conn|
+        conn.options.open_timeout = CLIENT_OPEN_TIMEOUT
+        conn.options.timeout = CLIENT_READ_TIMEOUT
         conn.headers["Content-Type"] = "application/json"
         conn.adapter Faraday.default_adapter
       end
