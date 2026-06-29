@@ -273,7 +273,9 @@ $outpost-teal: #34e0ba;
   font-size: 0.9rem;
   color: $outpost-ink;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 
   &:has(input:checked) {
     border-color: $outpost-orange;
