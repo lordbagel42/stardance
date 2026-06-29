@@ -68,6 +68,25 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     assert fr.errors[:requested_amount_cents].any?
   end
 
+  test "allows a $0 funding request for the no-grant (kit provided) path" do
+    fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 1, requested_amount_cents: 0)
+    assert fr.valid?, fr.errors.full_messages.to_sentence
+  end
+
+  test "approving a $0 request advances to build and accrues the discount without an HCB grant" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 3, requested_amount_cents: 0, status: :pending
+    )
+    # No HCBService stub: a $0 request must NOT attempt to issue a card grant
+    # (issuing would hit the real service and raise).
+    fr.update!(reviewer: @reviewer, status: :approved)
+
+    assert_equal "build", @project.reload.hardware_stage
+    assert_nil fr.reload.hcb_grant_hashid
+    # tier 3 (S) flat discount still accrues toward the Outpost Ticket.
+    assert_equal 300, @owner.reload.outpost_discount_stardust
+  end
+
   test "approval switches the project to build and accrues the owner discount" do
     fr = @project.certification_funding_requests.create!(
       user: @owner, complexity_tier: 3, requested_amount_cents: 6_000, status: :pending

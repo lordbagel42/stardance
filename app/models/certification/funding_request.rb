@@ -92,7 +92,7 @@ module Certification
     end
 
     validates :complexity_tier, inclusion: { in: TIER_MAX_CENTS.keys }
-    validates :requested_amount_cents, numericality: { only_integer: true, greater_than: 0 }
+    validates :requested_amount_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
     validates :approved_amount_cents,
               numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
     validates :feedback, length: { maximum: 10_000 }, allow_blank: true
@@ -296,6 +296,7 @@ module Certification
 
     def issue_hcb_grant!
       return if hcb_grant_hashid.present?
+      return if final_amount_cents.to_i == 0
 
       owner = project.memberships.owner.first&.user || user
       grant = HCBService.create_card_grant(
