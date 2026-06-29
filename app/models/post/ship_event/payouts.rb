@@ -177,10 +177,10 @@ module Post::ShipEvent::Payouts
   end
 
   def hours
-    if reviewed_hardware_minutes
-      reviewed_hardware_minutes / 60.0
+    if reviewed_hardware_devlogs
+      capped_reviewed_hardware_minutes / 60.0
     else
-      hours_at_ship.to_f
+      capped_logged_seconds / 1.hour.to_f
     end
   end
 
@@ -269,9 +269,23 @@ module Post::ShipEvent::Payouts
       submission.nil? || (submission.payout_path == "voting" && !submission.rejected?)
     end
 
-    def reviewed_hardware_minutes
+    def reviewed_hardware_devlogs
       review = certification_ysws_review
-      review.approved_minutes_total if project&.hardware? && review&.devlog_reviews&.any?(&:reviewed?)
+      review.devlog_reviews if project&.hardware? && review&.devlog_reviews&.any?(&:reviewed?)
+    end
+
+    def capped_reviewed_hardware_minutes
+      reviewed_hardware_devlogs.sum do |devlog_review|
+        [ devlog_review.approved_minutes.to_i, Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG * 60 ].min
+      end
+    end
+
+    def capped_logged_seconds
+      return 0 unless post&.project && post.created_at
+
+      devlogs_in_ship_window.pluck("post_devlogs.duration_seconds").sum do |duration_seconds|
+        [ duration_seconds.to_i, Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG.hours.to_i ].min
+      end
     end
 
     def payout_amount
