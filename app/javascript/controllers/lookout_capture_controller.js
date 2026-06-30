@@ -328,7 +328,10 @@ export default class extends Controller {
     // reappear in the project page's assignment popup.
     if (choice === "skip") {
       await this.skipSession();
-      this.setText(this.doneStatusTarget, "All done — your recording was saved without sending time.");
+      this.setText(
+        this.doneStatusTarget,
+        "All done — your recording was saved without sending time.",
+      );
       if (this.hasDestinationTarget) this.destinationTarget.hidden = true;
       if (this.hasDoneCloseTarget) this.doneCloseTarget.hidden = false;
       return;

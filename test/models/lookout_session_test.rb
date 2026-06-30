@@ -94,7 +94,7 @@ class LookoutSessionTest < ActiveSupport::TestCase
     # should NOT appear — not complete
     LookoutSession.create!(user: @user, project: @project, token: "ua4", status: "compiling")
 
-    assert_equal [unassigned.id], LookoutSession.unassigned.pluck(:id)
+    assert_equal [ unassigned.id ], LookoutSession.unassigned.pluck(:id)
   end
 
   test "unassigned scope excludes failed sessions" do
