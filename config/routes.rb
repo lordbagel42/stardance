@@ -882,6 +882,7 @@ Rails.application.routes.draw do
       post :stop, on: :member
       post :set_mode, on: :member
       post :forward_heartbeats, on: :member
+      post :skip, on: :member
       get  :status, on: :collection
     end
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }

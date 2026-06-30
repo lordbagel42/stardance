@@ -2,18 +2,21 @@
 #
 # Table name: lookout_sessions
 #
-#  id               :bigint           not null, primary key
-#  duration_seconds :integer          default(0)
-#  mode             :string
-#  recording_url    :string
-#  started_at       :datetime
-#  status           :string           default("pending")
-#  stopped_at       :datetime
-#  token            :string           not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  project_id       :bigint           not null
-#  user_id          :bigint           not null
+#  id                     :bigint           not null, primary key
+#  duration_seconds       :integer          default(0)
+#  hackatime_forwarded_at :datetime
+#  hackatime_project_name :string
+#  hackatime_skipped      :boolean          default(FALSE), not null
+#  mode                   :string
+#  recording_url          :string
+#  started_at             :datetime
+#  status                 :string           default("pending")
+#  stopped_at             :datetime
+#  token                  :string           not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  project_id             :bigint           not null
+#  user_id                :bigint           not null
 #
 # Indexes
 #
@@ -49,6 +52,7 @@ class LookoutSession < ApplicationRecord
   # SyncPendingLookoutSessionsJob re-polls these so a recording can finalize even
   # when the builder closed the recorder tab before Lookout finished compiling.
   scope :syncable, -> { where.not(status: TERMINAL_STATUSES) }
+  scope :unassigned, -> { where(status: "complete", hackatime_forwarded_at: nil, hackatime_skipped: false) }
 
   def terminal?
     TERMINAL_STATUSES.include?(status)

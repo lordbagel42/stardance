@@ -2,18 +2,21 @@
 #
 # Table name: lookout_sessions
 #
-#  id               :bigint           not null, primary key
-#  duration_seconds :integer          default(0)
-#  mode             :string
-#  recording_url    :string
-#  started_at       :datetime
-#  status           :string           default("pending")
-#  stopped_at       :datetime
-#  token            :string           not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  project_id       :bigint           not null
-#  user_id          :bigint           not null
+#  id                     :bigint           not null, primary key
+#  duration_seconds       :integer          default(0)
+#  hackatime_forwarded_at :datetime
+#  hackatime_project_name :string
+#  hackatime_skipped      :boolean          default(FALSE), not null
+#  mode                   :string
+#  recording_url          :string
+#  started_at             :datetime
+#  status                 :string           default("pending")
+#  stopped_at             :datetime
+#  token                  :string           not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  project_id             :bigint           not null
+#  user_id                :bigint           not null
 #
 # Indexes
 #
@@ -77,6 +80,26 @@ class LookoutSessionTest < ActiveSupport::TestCase
     LookoutSession.create!(user: @user, project: @project, token: "sf", status: "failed")
 
     assert_equal [ pending.id, stopped.id ].sort, LookoutSession.syncable.pluck(:id).sort
+  end
+
+  test "unassigned scope returns only complete sessions with no forwarded_at and not skipped" do
+    # should appear
+    unassigned = LookoutSession.create!(user: @user, project: @project, token: "ua1", status: "complete")
+    # should NOT appear — forwarded
+    LookoutSession.create!(user: @user, project: @project, token: "ua2", status: "complete",
+                           hackatime_forwarded_at: Time.current, hackatime_project_name: "my-proj")
+    # should NOT appear — skipped
+    LookoutSession.create!(user: @user, project: @project, token: "ua3", status: "complete",
+                           hackatime_skipped: true)
+    # should NOT appear — not complete
+    LookoutSession.create!(user: @user, project: @project, token: "ua4", status: "compiling")
+
+    assert_equal [unassigned.id], LookoutSession.unassigned.pluck(:id)
+  end
+
+  test "unassigned scope excludes failed sessions" do
+    LookoutSession.create!(user: @user, project: @project, token: "ua5", status: "failed")
+    assert_empty LookoutSession.unassigned
   end
 
   test "terminal? is true only for complete and failed" do

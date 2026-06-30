@@ -128,7 +128,9 @@ class Projects::LookoutSessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     LookoutHeartbeatForwarder.stub(:call, forward) do
-      post forward_heartbeats_project_lookout_session_path(@project, session), params: { project_name: "My HT Project" }
+      post forward_heartbeats_project_lookout_session_path(@project, session),
+           params: { project_name: "My HT Project" },
+           headers: { "Accept" => "application/json" }
     end
 
     assert_response :success
@@ -182,6 +184,53 @@ class Projects::LookoutSessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_not called
+  end
+
+  test "forward_heartbeats sets hackatime_forwarded_at and hackatime_project_name on success" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd1", status: "complete",
+                                                duration_seconds: 600)
+    sign_in @owner
+
+    ok_result = LookoutHeartbeatForwarder::Result.new(ok: true, error: nil, count: 5)
+    LookoutHeartbeatForwarder.stub(:call, ok_result) do
+      post forward_heartbeats_project_lookout_session_path(@project, session),
+           params: { project_name: "my-proj" }
+    end
+
+    assert_not_nil session.reload.hackatime_forwarded_at
+    assert_equal "my-proj", session.reload.hackatime_project_name
+  end
+
+  test "forward_heartbeats does not set tracking fields on failure" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd2", status: "complete",
+                                                duration_seconds: 600)
+    sign_in @owner
+
+    failure = LookoutHeartbeatForwarder::Result.new(ok: false, error: "Something went wrong", count: 0)
+    LookoutHeartbeatForwarder.stub(:call, failure) do
+      post forward_heartbeats_project_lookout_session_path(@project, session),
+           params: { project_name: "my-proj" }
+    end
+
+    assert_nil session.reload.hackatime_forwarded_at
+    assert_nil session.reload.hackatime_project_name
+  end
+
+  test "forward_heartbeats returns turbo stream removing the row when accepted" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd3", status: "complete",
+                                                duration_seconds: 600)
+    sign_in @owner
+
+    ok_result = LookoutHeartbeatForwarder::Result.new(ok: true, error: nil, count: 5)
+    LookoutHeartbeatForwarder.stub(:call, ok_result) do
+      post forward_heartbeats_project_lookout_session_path(@project, session),
+           params: { project_name: "my-proj" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+
+    assert_response :ok
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_match "lookout_session_#{session.id}", response.body
   end
 
   test "set_mode stores a valid recording mode" do
@@ -266,5 +315,28 @@ class Projects::LookoutSessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal "stopped", session.reload.status
+  end
+
+  test "skip marks session as skipped and returns turbo stream removing the row" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-skip1", status: "complete")
+    sign_in @owner
+
+    post skip_project_lookout_session_path(@project, session),
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_response :ok
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert session.reload.hackatime_skipped
+    assert_match "lookout_session_#{session.id}", response.body
+  end
+
+  test "skip is rejected for a session the user doesn't own" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-skip2", status: "complete")
+    sign_in @stranger
+
+    post skip_project_lookout_session_path(@project, session)
+
+    assert_response :not_found
+    assert_not session.reload.hackatime_skipped
   end
 end

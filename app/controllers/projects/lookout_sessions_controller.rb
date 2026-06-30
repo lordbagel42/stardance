@@ -1,7 +1,7 @@
 class Projects::LookoutSessionsController < ApplicationController
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) || Flipper.enabled?(:lookout, current_user) }
   before_action :set_project
-  before_action :set_lookout_session, only: %i[show record stop set_mode forward_heartbeats]
+  before_action :set_lookout_session, only: %i[show record stop set_mode forward_heartbeats skip]
 
   def create
     authorize @project, :create_devlog?
@@ -110,9 +110,29 @@ class Projects::LookoutSessionsController < ApplicationController
 
     result = LookoutHeartbeatForwarder.call(@lookout_session, project_name: project_name)
     if result.ok?
-      render json: { ok: true, project: project_name, heartbeats: result.count }
+      @lookout_session.update!(
+        hackatime_project_name: project_name,
+        hackatime_forwarded_at: Time.current
+      )
+      respond_to do |format|
+        format.turbo_stream
+        format.json { render json: { ok: true, project: project_name, heartbeats: result.count } }
+        format.html { redirect_to project_path(@project) }
+      end
     else
       render json: { error: result.error }, status: :unprocessable_entity
+    end
+  end
+
+  def skip
+    authorize @project, :create_devlog?
+
+    @lookout_session.update!(hackatime_skipped: true)
+
+    respond_to do |format|
+      format.turbo_stream
+      format.json { render json: { ok: true } }
+      format.html { redirect_to project_path(@project) }
     end
   end
 

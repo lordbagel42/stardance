@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_30_182848) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -386,6 +386,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   create_table "lookout_sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "duration_seconds", default: 0
+    t.datetime "hackatime_forwarded_at"
+    t.string "hackatime_project_name"
+    t.boolean "hackatime_skipped", default: false, null: false
     t.string "mode"
     t.bigint "project_id", null: false
     t.string "recording_url"

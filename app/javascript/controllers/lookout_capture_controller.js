@@ -56,6 +56,53 @@ export default class extends Controller {
     this.mode = null;
     this.baseSeconds = 0;
     this.lastSyncMs = Date.now();
+    this.checkExistingSession();
+  }
+
+  async checkExistingSession() {
+    let data;
+    try {
+      data = await this.getJson(`/api/sessions/${this.tokenValue}/status`);
+    } catch (_) {
+      return; // Can't reach Lookout — stay on the chooser
+    }
+
+    const { status } = data;
+    if (!status || status === "pending") return;
+
+    if (status === "complete") {
+      this.stopped = true;
+      this.showStage("done");
+      this.chooseDestination();
+      this.setText(this.doneStatusTarget, "Your timelapse is ready!");
+      await this.revealVideo();
+    } else if (status === "failed") {
+      this.showError(
+        "This recording failed to process — you can try again or start a new session.",
+      );
+    } else if (status === "stopped" || status === "compiling") {
+      this.stopped = true;
+      this.showStage("done");
+      this.chooseDestination();
+      this.setText(this.doneStatusTarget, "Saving your recording…");
+      this.pollStatus(this.doneStatusTarget, { showVideo: true });
+    } else if (status === "active" || status === "paused") {
+      // Desktop app is recording — skip the chooser and resume polling
+      this.mode = "desktop";
+      this.showStage("desktop");
+      this.deepLinkTextTarget.textContent = this.deepLinkValue;
+      this.deepLinkTarget.href = this.deepLinkValue;
+      this.setText(
+        this.desktopStatusTarget,
+        status === "paused"
+          ? "Recording is paused in the Lookout app."
+          : "Recording is in progress in the Lookout app…",
+      );
+      this.pollStatus(this.desktopStatusTarget, {
+        showVideo: true,
+        doneOnComplete: true,
+      });
+    }
   }
 
   disconnect() {
