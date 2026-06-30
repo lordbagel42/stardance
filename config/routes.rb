@@ -650,6 +650,7 @@ Rails.application.routes.draw do
       end
     end
     resources :payout_reviews, only: [ :index, :show ]
+    resources :ledger_entries, only: [ :index ]
     get "super_stars", to: "super_stars#show", as: :super_stars
     get "user-perms", to: "users#user_perms"
     resource :support, only: [ :show ], controller: "support/dashboards"

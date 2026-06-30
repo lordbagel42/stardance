@@ -10,6 +10,9 @@ application.register("achievement-highlight", AchievementHighlightController);
 import AddressSelectController from "./address_select_controller";
 application.register("address-select", AddressSelectController);
 
+import AdminLedgerChartController from "./admin_ledger_chart_controller";
+application.register("admin-ledger-chart", AdminLedgerChartController);
+
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
