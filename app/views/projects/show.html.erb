@@ -1266,4 +1266,52 @@
       <p class="followers-modal__loading">Loading…</p>
     </div>
   </dialog>
+
+  <% if @lookout_unassigned&.any? %>
+    <dialog id="lookout-manager-modal"
+            class="lookout-manager-dialog"
+            data-controller="modal lookout-manager"
+            aria-label="Assign your recordings">
+      <div class="lookout-manager-dialog__panel">
+        <button class="lookout-manager-dialog__close"
+                data-action="click->modal#close"
+                aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <div class="lookout-manager">
+          <header class="lookout-manager__header">
+            <h2 class="lookout-manager__title">Unassigned Lookout recordings</h2>
+            <p class="lookout-manager__subtitle">We detected recordings that haven't been sent to Hackatime yet. Where should this time go?</p>
+          </header>
+          <div class="lookout-manager__tabs" data-lookout-manager-target="tabStrip">
+            <% @lookout_unassigned.each do |session| %>
+              <button type="button"
+                      id="tab_<%= dom_id(session) %>"
+                      class="lookout-manager__tab"
+                      data-lookout-manager-target="tab"
+                      data-action="click->lookout-manager#switchTab"
+                      data-row-id="<%= dom_id(session) %>">
+                <span class="lookout-manager__tab-duration"><%= format_recording_duration(session.duration_seconds) %></span>
+                <span class="lookout-manager__tab-date"><%= session.created_at.strftime("%b %-d") %></span>
+              </button>
+            <% end %>
+          </div>
+          <div class="lookout-manager__list">
+            <% @lookout_unassigned.each do |session| %>
+              <div id="<%= dom_id(session) %>" class="lookout-manager__row" data-lookout-manager-target="row">
+                <%= render "projects/lookout_manager/session_row",
+                      session: session,
+                      hackatime_project_names: @lookout_hackatime_names,
+                      linked_hackatime_names: @lookout_linked_names,
+                      default_hackatime_name: @lookout_default_name,
+                      hackatime_times: @lookout_hackatime_times %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  <% end %>
 </div>

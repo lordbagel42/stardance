@@ -75,6 +75,25 @@ class ProjectsController < ApplicationController
           }
         end
       end
+
+      if Flipper.enabled?(:lookout_manager, current_user)
+        # Kick off background sync rather than blocking page render with HTTP
+        # calls to LookoutService. SyncPendingLookoutSessionsJob handles this.
+        SyncPendingLookoutSessionsJob.perform_later
+
+        @lookout_unassigned = @project.lookout_sessions
+                                      .unassigned
+                                      .where(user: current_user)
+                                      .order(created_at: :desc)
+        @lookout_hackatime_names = current_user.hackatime_projects
+                                               .where.not(name: User::HackatimeProject::EXCLUDED_NAMES)
+                                               .order(:name)
+                                               .pluck(:name)
+        linked_keys = @linked_hackatime_projects&.map(&:name) || []
+        @lookout_linked_names = @lookout_hackatime_names & linked_keys
+        @lookout_default_name = @project.hackatime_recorder_name
+        @lookout_hackatime_times = @hackatime_times || {}
+      end
     end
 
 

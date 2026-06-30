@@ -1,0 +1,336 @@
+// Lookout Manager: popup for assigning recorded sessions to Hackatime.
+// Follows the same structure as .ship-warning-modal in _show.scss.
+
+.lookout-manager-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(640px, 94vw);
+  width: 100%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  margin: 0;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.lookout-manager-dialog__panel {
+  position: relative;
+  background: var(--color-space-bg-2, #0d0b2e);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--border-radius);
+  padding: var(--space-l);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.lookout-manager-dialog__close {
+  position: absolute;
+  top: var(--space-m);
+  right: var(--space-m);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-space-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms ease;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-space-text);
+    outline: none;
+  }
+}
+
+// ── Main content wrapper ───────────────────────────────────────────────────
+
+.lookout-manager {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.lookout-manager__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-right: var(--space-xl);
+}
+
+.lookout-manager__title {
+  margin: 0;
+  font-family: var(--font-family-text, "Exo 2", sans-serif);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-brand-cream);
+}
+
+.lookout-manager__subtitle {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-space-text-muted);
+}
+
+.lookout-manager__empty {
+  margin: 0;
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+}
+
+// ── Tab strip — hidden when only one recording ────────────────────────────
+
+.lookout-manager__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+
+  &:has(.lookout-manager__tab:only-child) {
+    display: none;
+  }
+}
+
+.lookout-manager__tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-s);
+  border: 1px solid var(--color-space-border);
+  border-radius: 99px;
+  background: none;
+  color: var(--color-space-text-muted);
+  font: inherit;
+  font-size: var(--font-size-s);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease;
+
+  &:hover {
+    border-color: var(--color-space-text);
+    color: var(--color-space-text);
+  }
+
+  &--active {
+    border-color: var(--color-brand-mint);
+    color: var(--color-brand-mint);
+    background: color-mix(in srgb, var(--color-brand-mint) 10%, transparent);
+
+    &:hover {
+      border-color: var(--color-brand-mint);
+      color: var(--color-brand-mint);
+    }
+  }
+}
+
+.lookout-manager__tab-duration {
+  font-weight: 700;
+}
+
+.lookout-manager__tab-date {
+  opacity: 0.7;
+}
+
+// ── List of sessions ───────────────────────────────────────────────────────
+
+.lookout-manager__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+// ── Individual session row ─────────────────────────────────────────────────
+
+.lookout-manager__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+
+  &[hidden] { display: none; }
+}
+
+.lookout-manager__preview {
+  width: 100%;
+  max-height: 220px;
+  border-radius: var(--profile-radius);
+  background: #000;
+  object-fit: contain;
+}
+
+.lookout-manager__row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  font-size: var(--font-size-s);
+}
+
+.lookout-manager__row-duration {
+  font-weight: 700;
+  color: var(--color-brand-mint);
+}
+
+.lookout-manager__row-date {
+  color: var(--color-space-text-muted);
+}
+
+// ── Assignment form section ────────────────────────────────────────────────
+
+.lookout-manager__row-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+// ── Destination chooser — mirrors lookout-rec__dest card style ────────────
+
+.lookout-manager__destination {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.lookout-manager__dest {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-m);
+  padding: var(--space-m);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-2-bg, #343651);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--color-space-text);
+    background: var(--color-set-3-bg, #606684);
+  }
+
+  &:has(.lookout-manager__dest-radio:checked) {
+    border-color: var(--color-brand-mint);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-mint) 12%,
+      var(--color-set-2-bg, #343651)
+    );
+  }
+
+  &:has(.lookout-manager__dest-radio:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      border-color: var(--color-space-border);
+      background: var(--color-set-2-bg, #343651);
+    }
+  }
+}
+
+.lookout-manager__dest-radio {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-mint);
+  cursor: inherit;
+}
+
+.lookout-manager__dest-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.lookout-manager__dest-name {
+  font-weight: 700;
+  color: var(--color-space-text);
+}
+
+.lookout-manager__dest-sub {
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+.lookout-manager__dest-select,
+.lookout-manager__dest-input {
+  width: 100%;
+  margin-top: var(--space-xxs);
+  padding: var(--space-xs) var(--space-s);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-1-bg, #08061e);
+  color: var(--color-space-text);
+  font: inherit;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-mint);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.lookout-manager__dest-input {
+  cursor: text;
+}
+
+// ── Actions row — assign left, delete right ────────────────────────────────
+
+.lookout-manager__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  margin-top: var(--space-l);
+  padding-top: var(--space-s);
+  border-top: 1px solid var(--color-space-border);
+}
+
+@media (max-width: 640px) {
+  .lookout-manager-dialog__panel {
+    padding: var(--space-m);
+  }
+
+  .lookout-manager__title {
+    font-size: var(--font-size-xl);
+  }
+
+  .lookout-manager__dest-group {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .lookout-manager__dest-divider {
+    padding: var(--space-xs) 0;
+  }
+
+  .lookout-manager__row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

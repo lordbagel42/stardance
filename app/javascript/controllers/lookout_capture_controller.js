@@ -44,6 +44,7 @@ export default class extends Controller {
     deepLink: String,
     modeUrl: String,
     forwardUrl: String,
+    skipUrl: String,
   };
 
   connect() {
@@ -319,9 +320,20 @@ export default class extends Controller {
   }
 
   // Confirm the destination: forward the captured time to the chosen Hackatime
-  // project (existing or new), or send nothing when the user opted out.
+  // project (existing or new), or mark as skipped when the user opted out.
   async finish() {
     const choice = this.selectedDestination();
+
+    // "Don't Send" — mark the session as skipped server-side so it doesn't
+    // reappear in the project page's assignment popup.
+    if (choice === "skip") {
+      await this.skipSession();
+      this.setText(this.doneStatusTarget, "All done — your recording was saved without sending time.");
+      if (this.hasDestinationTarget) this.destinationTarget.hidden = true;
+      if (this.hasDoneCloseTarget) this.doneCloseTarget.hidden = false;
+      return;
+    }
+
     let projectName = null;
     if (choice === "existing")
       projectName = this.hasExistingSelectTarget
@@ -349,7 +361,7 @@ export default class extends Controller {
         await this.forwardHeartbeats(projectName);
         this.setText(
           this.doneStatusTarget,
-          `Time sent to “${projectName}” — it'll show up in Hackatime shortly.`,
+          `Time sent to "${projectName}" — it'll show up in Hackatime shortly.`,
         );
       } catch (error) {
         // Surface the real reason next to the button and let the user retry,
@@ -411,6 +423,21 @@ export default class extends Controller {
       // non-JSON response
     }
     return `We couldn't send your time to Hackatime (error ${res.status}).`;
+  }
+
+  // Mark the session as skipped server-side so it doesn't reappear in the
+  // project page's assignment popup. Best-effort.
+  async skipSession() {
+    if (!this.skipUrlValue) return;
+    await fetch(this.skipUrlValue, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": this.csrfToken(),
+        Accept: "application/json",
+      },
+      body: "{}",
+    }).catch(() => {});
   }
 
   csrfToken() {

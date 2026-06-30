@@ -208,6 +208,9 @@ application.register("json-highlight", JsonHighlightController);
 import LookoutCaptureController from "./lookout_capture_controller";
 application.register("lookout-capture", LookoutCaptureController);
 
+import LookoutManagerController from "./lookout_manager_controller";
+application.register("lookout-manager", LookoutManagerController);
+
 import LookoutRecorderController from "./lookout_recorder_controller";
 application.register("lookout-recorder", LookoutRecorderController);
 
