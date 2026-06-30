@@ -1,0 +1,23 @@
+<turbo-frame id="lookout_manager">
+  <div class="lookout-manager">
+    <header class="lookout-manager__header">
+      <h2 class="lookout-manager__title">Assign your recordings</h2>
+    </header>
+
+    <% if @sessions.empty? %>
+      <p class="lookout-manager__empty">All recordings have been assigned.</p>
+    <% else %>
+      <div class="lookout-manager__list">
+        <% @sessions.each do |session| %>
+          <div id="<%= dom_id(session) %>" class="lookout-manager__row" data-lookout-manager-target="row">
+            <%= render "session_row",
+                  session: session,
+                  hackatime_project_names: @hackatime_project_names,
+                  linked_hackatime_names: @linked_hackatime_names,
+                  default_hackatime_name: @default_hackatime_name %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</turbo-frame>

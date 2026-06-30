@@ -885,6 +885,7 @@ Rails.application.routes.draw do
       post :skip, on: :member
       get  :status, on: :collection
     end
+    resources :lookout_manager, only: [:index], module: :projects
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }
     resource :ships, only: [ :create ], module: :projects
     resource :recertification, only: [ :create ], module: :projects

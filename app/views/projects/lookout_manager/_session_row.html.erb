@@ -1,0 +1,82 @@
+<div class="lookout-manager__row-info">
+  <div class="lookout-manager__row-meta">
+    <span class="lookout-manager__row-duration"><%= format_recording_duration(session.duration_seconds) %></span>
+    <span class="lookout-manager__row-date"><%= session.created_at.strftime("%b %-d") %></span>
+  </div>
+</div>
+
+<div class="lookout-manager__row-form">
+  <%= form_with url: forward_heartbeats_project_lookout_session_path(@project, session), method: :post do |f| %>
+    <input type="hidden"
+           name="project_name"
+           data-lookout-manager-target="projectNameField">
+
+    <label class="lookout-manager__dest">
+      <input type="radio" name="lookout-dest-<%= session.id %>" value="existing"
+             class="lookout-manager__dest-radio"
+             data-action="change->lookout-manager#projectSelectChanged"
+             <%= "checked" if hackatime_project_names.any? %>
+             <%= "disabled" if hackatime_project_names.empty? %>>
+      <span class="lookout-manager__dest-text">
+        <span class="lookout-manager__dest-name">Add to an existing Hackatime project</span>
+        <% if hackatime_project_names.any? %>
+          <select class="lookout-manager__dest-select"
+                  data-lookout-manager-target="existingSelect"
+                  data-action="change->lookout-manager#projectSelectChanged">
+            <% linked_names = Array(linked_hackatime_names) %>
+            <% if linked_names.any? %>
+              <optgroup label="Linked to this project">
+                <% linked_names.each do |name| %>
+                  <option value="<%= name %>"><%= name %></option>
+                <% end %>
+              </optgroup>
+              <% other_names = hackatime_project_names - linked_names %>
+              <% if other_names.any? %>
+                <optgroup label="Your other Hackatime projects">
+                  <% other_names.each do |name| %>
+                    <option value="<%= name %>"><%= name %></option>
+                  <% end %>
+                </optgroup>
+              <% end %>
+            <% else %>
+              <% hackatime_project_names.each do |name| %>
+                <option value="<%= name %>"><%= name %></option>
+              <% end %>
+            <% end %>
+          </select>
+        <% else %>
+          <span class="lookout-manager__dest-sub">You don't have any Hackatime projects yet.</span>
+        <% end %>
+      </span>
+    </label>
+
+    <label class="lookout-manager__dest">
+      <input type="radio" name="lookout-dest-<%= session.id %>" value="new"
+             class="lookout-manager__dest-radio"
+             data-action="change->lookout-manager#projectSelectChanged"
+             <%= "checked" if hackatime_project_names.empty? %>>
+      <span class="lookout-manager__dest-text">
+        <span class="lookout-manager__dest-name">Create a new Hackatime project</span>
+        <input type="text" class="lookout-manager__dest-input"
+               name="new_name"
+               data-lookout-manager-target="newName"
+               data-action="input->lookout-manager#newNameChanged"
+               value="<%= default_hackatime_name %>"
+               placeholder="Project name"
+               maxlength="120"
+               autocomplete="off"
+               disabled>
+      </span>
+    </label>
+
+    <div class="lookout-manager__row-actions">
+      <%= render ActionButtonComponent.new(text: "Assign", variant: :primary, size: :small, type: :submit) %>
+
+      <%= button_to "Skip",
+            skip_project_lookout_session_path(@project, session),
+            method: :post,
+            class: "lookout-manager__skip-btn",
+            data: { turbo_stream: true } %>
+    </div>
+  <% end %>
+</div>
