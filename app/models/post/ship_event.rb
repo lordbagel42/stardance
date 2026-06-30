@@ -5,10 +5,12 @@
 #  id                         :bigint           not null, primary key
 #  body                       :string
 #  certification_status       :string           default("pending")
+#  comments_count             :integer          default(0), not null
 #  feedback_reason            :text
 #  feedback_video_url         :string
 #  hours_at_payout            :float
 #  hours_at_ship              :float
+#  likes_count                :integer          default(0), not null
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
@@ -42,6 +44,7 @@ class Post::ShipEvent < ApplicationRecord
   VOTES_REQUIRED_FOR_PAYOUT = 12
   VOTES_TO_LEAVE_POOL = VOTES_REQUIRED_FOR_PAYOUT
   VOTE_COST_PER_SHIP = 15
+  MAX_PAYOUT_HOURS_PER_DEVLOG = 10
   BODY_MAX_LENGTH = Post::Devlog::BODY_MAX_LENGTH
   REVIEW_INSTRUCTIONS_MAX_LENGTH = 2_000
   MAX_ATTACHMENTS = 2
@@ -111,12 +114,14 @@ class Post::ShipEvent < ApplicationRecord
   def hours_logged_in_ship_window
     return 0 unless post&.project && post.created_at
 
+    devlogs_in_ship_window.sum("post_devlogs.duration_seconds").to_f / 3600
+  end
+
+  def devlogs_in_ship_window
     project.posts.of_devlogs(join: true)
            .where("posts.created_at >= ? AND posts.created_at <= ?", ship_window_start_time, post.created_at)
            .where(post_devlogs: { deleted_at: nil })
            .then { |scope| project.hardware? ? scope.where(post_devlogs: { phase: "build" }) : scope }
-           .sum("post_devlogs.duration_seconds")
-           .to_f / 3600
   end
 
   def ship_window_start_time

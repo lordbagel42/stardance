@@ -17,6 +17,7 @@
 #  fixed_stardust_payout        :integer
 #  guide_sections_count         :integer
 #  guide_url                    :string
+#  hardware                     :boolean          default(FALSE), not null
 #  name                         :string           not null
 #  prizes_count                 :integer          default(0), not null
 #  slug                         :string           not null
@@ -70,6 +71,13 @@ class Mission < ApplicationRecord
 
   DIFFICULTIES = %w[beginner intermediate advanced].freeze
   enum :difficulty, DIFFICULTIES.index_with(&:itself), prefix: true
+
+  # Flipping a mission to hardware converts its already-attached software
+  # projects to hardware (see Mission::MigrateProjectsToHardwareJob). Runs after
+  # commit so the job sees the persisted flag; flipping back to software leaves
+  # projects untouched (a genuinely hardware project shouldn't revert).
+  after_update_commit :migrate_attached_projects_to_hardware,
+                      if: -> { saved_change_to_hardware? && hardware? }
 
   validates :slug, presence: true, uniqueness: true,
                    format: { with: /\A[a-z0-9][a-z0-9_-]*\z/, message: "must be URL-safe" },
@@ -379,5 +387,11 @@ class Mission < ApplicationRecord
       .joins(ship_event: :post)
       .distinct
       .pluck("posts.project_id")
+  end
+
+  private
+
+  def migrate_attached_projects_to_hardware
+    Mission::MigrateProjectsToHardwareJob.perform_later(id, PaperTrail.request.whodunnit)
   end
 end

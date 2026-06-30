@@ -60,6 +60,9 @@
               <li class="mission-home__hero-chip mission-home__hero-chip--status mission-home__hero-chip--status-<%= @progress_state.to_s.dasherize %>">
                 <span class="mission-home__hero-chip-dot" aria-hidden="true"><%= status_glyph %></span> <%= status_label %>
               </li>
+              <% if @mission.hardware? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--hardware">hardware</li>
+              <% end %>
               <% if @mission.difficulty.present? %>
                 <li class="mission-home__hero-chip mission-home__hero-chip--difficulty mission-home__hero-chip--difficulty-<%= @mission.difficulty %>">
                   <%= @mission.difficulty %>
@@ -112,10 +115,18 @@
                 Continue project
               </button>
             <% end %>
+            <%# Onboarded builders (HCA-linked with a project) would be bounced
+                back to an existing draft by the setup flow's redirect_if_setup_complete
+                guard, so they create through the standard projects#create path —
+                which attaches the mission and applies hardware conversion. New
+                builders still funnel through the onboarding setup step. %>
+            <% onboarded = current_user&.hca_linked? && current_user.projects.exists? %>
             <%= button_to "Create a project",
-                          projects_setup_submit_mission_path,
+                          onboarded ? projects_path : projects_setup_submit_mission_path,
                           method: :post,
-                          params: { mission_slug: @mission.slug },
+                          params: onboarded ?
+                            { mission_slug: @mission.slug, project: { title: "Untitled" } } :
+                            { mission_slug: @mission.slug },
                           data: { turbo: false },
                           form: { class: "mission-home__cta-form" },
                           class: "action-btn action-btn--large #{continue_flow ? "action-btn--secondary" : "action-btn--primary"}" %>
