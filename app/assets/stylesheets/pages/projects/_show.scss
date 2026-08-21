@@ -1883,6 +1883,11 @@ turbo-frame#project_hero {
   margin: 0;
   color: var(--color-space-text);
 
+  // The panel below owns the height cap and the scrolling: it carries the
+  // border, radius and background, so scrolling *this* box instead would slide
+  // that frame out of view and clip the content against a square transparent
+  // edge.
+
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(2px);
@@ -1977,6 +1982,11 @@ turbo-frame#project_hero {
   translate: -50% -50%;
   margin: 0;
   color: var(--color-space-text);
+
+  // The panel below owns the height cap and the scrolling: it carries the
+  // border, radius and background, so scrolling *this* box instead would slide
+  // that frame out of view and clip the content against a square transparent
+  // edge.
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
@@ -2076,14 +2086,18 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
+
+  // The panel below owns the height cap and the scrolling: it carries the
+  // border, radius and background, so scrolling *this* box instead would slide
+  // that frame out of view and clip the content against a square transparent
+  // edge.
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(2px);
   }
+
 }
 
 // The ship-post step previews a full ship card, so give it more room.
@@ -2092,6 +2106,9 @@ turbo-frame#project_hero {
 }
 
 .ship-modal__panel {
+  // Capped and scrolled here rather than on the dialog — see the note above.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2279,18 +2296,25 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
+
+  // The panel below owns the height cap and the scrolling: it carries the
+  // border, radius and background, so scrolling *this* box instead would slide
+  // that frame out of view and clip the content against a square transparent
+  // edge.
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(3px);
   }
+
 }
 
 .recert-modal__panel {
   position: relative;
+  // Capped and scrolled here rather than on the dialog — see the note above.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
