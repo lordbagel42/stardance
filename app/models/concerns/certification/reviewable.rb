@@ -126,6 +126,78 @@ module Certification
       status.to_s.in?(DECIDED_STATUSES)
     end
 
+    # --- action items --------------------------------------------------------
+    #
+    # A reviewer writes their asks as a dashed list inside the feedback:
+    #
+    #   nice project! a few things to fix though:
+    #   - put an image at the top of your readme
+    #   - include links in bom!
+    #
+    # The builder has to tick every one of those before they can resubmit, so
+    # that a resubmission is a deliberate "I fixed these" rather than a reflex.
+    # Both hardware queues share the syntax, which is why this lives here.
+    #
+    # None of the ticking is persisted. The list is parsed when the resubmit
+    # form renders and parsed again when it posts, so there is no stored copy to
+    # drift out of step with what the reviewer actually wrote - and a reviewer
+    # who rewords their feedback simply changes the list.
+
+    # A dash, optionally indented, then whitespace, then the ask. Requiring the
+    # whitespace is what keeps ordinary prose out: "---" rules and words like
+    # "-5V rail" are not lists, and a bare dash asks for nothing.
+    ACTION_ITEM_LINE = /\A[[:blank:]]*-[[:blank:]]+(\S.*?)[[:blank:]]*\z/
+
+    def action_items
+      feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] }
+    end
+
+    # The feedback with the dashed lines lifted out, so the resubmit form can
+    # show the reviewer's prose above the checklist without saying it twice.
+    def feedback_prose
+      feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip
+    end
+
+    # True when this review hands the builder a checklist they have to work
+    # through. Unlisted prose gates nothing: a reviewer who writes no dashed
+    # lines must not accidentally trap the builder behind a list of nothing, so
+    # resubmission stays exactly as open as it was before.
+    def gates_resubmission?
+      action_items.any?
+    end
+
+    # Fingerprint of the checklist as it currently reads, carried in the
+    # resubmit form so a form rendered against older feedback can be spotted.
+    # Only the items are covered, never the surrounding prose: the reviewer is
+    # free to fix a typo without invalidating a form the builder already has
+    # open. Nil when there is no checklist to fingerprint.
+    def action_items_digest
+      items = action_items
+      return if items.empty?
+
+      Digest::SHA256.hexdigest(items.join("\n"))
+    end
+
+    # Why a resubmission can't go ahead, or nil when it can.
+    #
+    # :unacknowledged means the builder hasn't ticked everything yet. A request
+    # carrying no fingerprint at all counts as this rather than as a mismatch:
+    # it never came through the resubmit form, so nothing was ticked.
+    # :stale means a fingerprint was offered but describes a different
+    # checklist - the reviewer edited their feedback after the form was opened,
+    # so the ticks in hand refer to items that may no longer exist, and the
+    # builder is shown the new list instead of having them counted.
+    def action_items_blocker(acknowledged:, digest:)
+      return nil unless gates_resubmission?
+      return :unacknowledged if digest.blank?
+      return :stale unless digest == action_items_digest
+
+      ticked = Array(acknowledged).map { |index| index.to_i }
+      return :unacknowledged unless action_items.each_index.all? { |index| ticked.include?(index) }
+
+      nil
+    end
+
     # --- wrong-queue corrections ---------------------------------------------
     #
     # A reviewer who opens a submission that belongs in the other hardware queue
