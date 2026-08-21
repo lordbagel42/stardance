@@ -1,0 +1,43 @@
+<%# A returned review's checklist: the reviewer's asks, rendered as boxes the
+    builder has to tick before the resubmission is accepted. See
+    Certification::Reviewable for the "- do the thing" syntax reviewers write.
+
+    Nothing here is persisted. The digest pins the checklist this form was built
+    from, so a reviewer who rewords their feedback while the modal sits open is
+    caught by ActionItemGate rather than having stale ticks accepted against
+    items that no longer exist.
+
+    Only the asks appear here, never the reviewer's surrounding prose - that is
+    already on the timeline card behind this modal (projects/_review_feedback),
+    so repeating it would bury the checklist in text the builder just read.
+
+    Must be rendered inside a form carrying data-controller="action-items", so
+    the submit event this partial's targets guard reaches the controller.
+
+    Locals: review - a returned Certification::Reviewable. %>
+<div class="action-items">
+  <h4 class="action-items__heading">Before you submit again</h4>
+  <p class="action-items__hint">Your last reviewer asked for these changes. Tick each one to confirm you've done it.</p>
+
+  <ul class="action-items__list">
+    <% review.action_items.each_with_index do |item, index| %>
+      <li class="action-items__item">
+        <label class="action-items__label">
+          <%# id: nil because the name repeats across the list, so Rails would
+              otherwise stamp every box with the same element id. The label wraps
+              its input, so nothing needs to point at one. %>
+          <%= check_box_tag "acknowledged_action_items[]", index, false,
+                id: nil,
+                class: "action-items__checkbox",
+                data: { action_items_target: "checkbox", action: "change->action-items#report" } %>
+          <span class="action-items__text"><%= item %></span>
+        </label>
+      </li>
+    <% end %>
+  </ul>
+
+  <p class="action-items__progress" data-action-items-target="progress" aria-live="polite"></p>
+  <p class="action-items__error" role="alert" data-action-items-target="error" hidden></p>
+
+  <%= hidden_field_tag "action_items_digest", review.action_items_digest, id: nil %>
+</div>

@@ -1,4 +1,6 @@
 class Projects::FundingRequestsController < ApplicationController
+  include ActionItemGate
+
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_project
 
@@ -6,6 +8,11 @@ class Projects::FundingRequestsController < ApplicationController
   # project page. Creates a pending funding request for reviewer approval.
   def create
     authorize @project, :ship?
+
+    # Resubmitting after a return: the builder has to acknowledge the reviewer's
+    # checklist first. A first-time request has no returned review, so it never
+    # meets this.
+    return if action_items_block_resubmission?(@project.latest_funding_request)
 
     # Kit missions submit no tier/amount; the model defaults them. Only forward
     # what the form actually sent so a kit request stays valid.

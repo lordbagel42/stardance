@@ -2195,6 +2195,13 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
+  // Grayed out while the reviewer's checklist is unticked — see
+  // action_items_controller. Matches the .action-btn disabled convention.
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.1);
@@ -2389,6 +2396,14 @@ turbo-frame#project_hero {
   overflow-wrap: anywhere;
 }
 
+// Wraps the checklist and the actions row, so a gated resubmission posts its
+// ticks alongside the request.
+.recert-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
 .recert-modal__actions {
   display: flex;
   gap: var(--space-s);
@@ -2401,6 +2416,11 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 20px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
@@ -2416,8 +2436,8 @@ turbo-frame#project_hero {
     border-color 150ms ease,
     color 150ms ease;
 
-  &:hover,
-  &:focus-visible {
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(255, 255, 255, 0.35);
     outline: none;

@@ -146,6 +146,28 @@
   }
 }
 
+// The amount and the BOM confirmation share a row. Bottom-aligned so the
+// checkbox sits level with the input rather than with the input's label, and
+// wrapping so the pair stacks again on a narrow dialog.
+.funding-modal__request-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-m);
+
+  // Layout only in here: the checkbox's own colours stay on its block below, so
+  // the --error modifier isn't outranked by a more specific selector.
+  .funding-modal__amount {
+    flex: 0 0 auto;
+  }
+
+  .funding-modal__bom-check {
+    // Takes the rest of the row, but drops to its own line before it gets too
+    // cramped to read.
+    flex: 1 1 15rem;
+  }
+}
+
 .funding-modal__amount {
   display: flex;
   flex-direction: column;
@@ -192,8 +214,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-s);
-  padding: var(--space-xs) var(--space-s);
-  border: 2px solid transparent;
+  // Matches the amount input's vertical padding so the two sit level in the row.
+  padding: var(--space-s) var(--space-m);
+  background: var(--color-overlay-light-soft);
+  border: 2px solid var(--color-border-input);
   border-radius: var(--border-radius);
   font-size: var(--font-size-s);
   color: var(--color-space-text);
@@ -201,6 +225,24 @@
   transition:
     border-color 120ms ease,
     background 120ms ease;
+
+  // Both skip the error state: these are more specific than the --error
+  // modifier, so without the guard hovering a flagged checkbox would quietly
+  // repaint away the salmon that is pointing at it.
+  &:hover:not(#{&}--error) {
+    border-color: var(--color-border-input-focus);
+  }
+
+  &:focus-within:not(#{&}--error) {
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
+
+  // Ticked reads as settled, the same way an acknowledged action item does.
+  &:has(input[type="checkbox"]:checked) {
+    background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
+  }
 
   // Set when a submit is attempted with the box unticked, so the requirement
   // points at itself instead of the form failing silently.

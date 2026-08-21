@@ -1,4 +1,7 @@
-<% recert_review = project.ship_reviews.order(created_at: :desc).first %>
+<%# Ordered to match Projects::RecertificationsController, so the checklist
+    rendered here is the one the gate will check when this form posts. %>
+<% recert_review = project.ship_reviews.order(created_at: :desc, id: :desc).first %>
+<% gated = recert_review&.returned? && recert_review.gates_resubmission? %>
 <dialog id="recert-modal-<%= project.id %>"
         class="recert-modal"
         data-controller="modal"
@@ -29,27 +32,44 @@
       </div>
     <% end %>
 
-    <% if recert_review&.feedback.present? %>
+    <%# When gated, the checklist renders the feedback itself - prose above, asks
+        as boxes - so showing it here too would say everything twice. %>
+    <% if recert_review&.feedback.present? && !gated %>
       <div class="recert-modal__feedback">
         <h4 class="recert-modal__feedback-label">Reviewer feedback</h4>
         <p class="recert-modal__feedback-body"><%= recert_review.feedback %></p>
       </div>
     <% end %>
 
-    <div class="recert-modal__actions">
-      <button type="button"
-              class="recert-modal__btn recert-modal__btn--secondary"
-              onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
-        Close
-      </button>
-      <% if is_member || current_user&.can_review? %>
-        <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
-        <%= button_to "Request re-certification",
-              project_recertification_path(project),
-              method: :post,
-              class: "recert-modal__btn recert-modal__btn--primary",
-              form: { data: { turbo_confirm: confirm_msg } } %>
+    <%# The checkboxes are the "have you addressed the feedback?" question asked
+        properly, so a gated form drops the confirm dialog that used to stand in
+        for it. Someone acting on a builder's behalf still gets one. %>
+    <% confirm_msg = if !is_member
+         "This will request re-certification on behalf of the user. Continue?"
+       elsif !gated
+         "Have you addressed the feedback? This will re-enter the review queue."
+       end %>
+    <%= form_with url: project_recertification_path(project),
+                  method: :post,
+                  class: "recert-modal__form",
+                  data: { turbo_confirm: confirm_msg,
+                          controller: ("action-items" if gated),
+                          action: ("submit->action-items#guard" if gated) }.compact do %>
+      <% if gated %>
+        <%= render "projects/action_items", review: recert_review %>
       <% end %>
-    </div>
+
+      <div class="recert-modal__actions">
+        <button type="button"
+                class="recert-modal__btn recert-modal__btn--secondary"
+                onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
+          Close
+        </button>
+        <%# No viewer check: show.html.erb only renders this modal for a member
+            or a reviewer, so anyone reading it can act. %>
+        <%= submit_tag "Request re-certification", class: "recert-modal__btn recert-modal__btn--primary",
+              data: { action_items_target: ("submit" if gated) } %>
+      </div>
+    <% end %>
   </div>
 </dialog>
