@@ -1,0 +1,22 @@
+<%# A reviewer's feedback as the builder reads it on their timeline: prose
+    first, then whatever the reviewer asked for as a bullet list.
+
+    Read-only counterpart to projects/_action_items, which renders the same asks
+    as boxes to tick on the resubmit form. Both go through
+    Certification::Reviewable, so the "- do the thing" syntax a reviewer types
+    is only ever parsed in one place - and never shown to the builder raw.
+
+    Locals: review - a Certification::Reviewable carrying feedback. %>
+<div class="review-feedback">
+  <% if review.feedback_prose.present? %>
+    <div class="review-feedback__prose"><%= simple_format(review.feedback_prose, {}, sanitize: true) %></div>
+  <% end %>
+
+  <% if review.action_items.any? %>
+    <ul class="review-feedback__items">
+      <% review.action_items.each do |item| %>
+        <li class="review-feedback__item"><%= item %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

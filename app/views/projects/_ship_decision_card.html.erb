@@ -52,7 +52,7 @@
     <section class="feed-post-card__body ship-decision-card__feedback" aria-label="Shipwright feedback">
       <p class="ship-decision-card__feedback-label">Feedback</p>
       <div class="ship-decision-card__feedback-body">
-        <%= simple_format(decision.feedback, {}, sanitize: true) %>
+        <%= render "projects/review_feedback", review: decision %>
       </div>
     </section>
   <% end %>
@@ -72,12 +72,27 @@
 
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
-      <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
-      <%= button_to "Request re-certification",
-            project_recertification_path(project),
-            method: :post,
-            class: "recert-modal__btn recert-modal__btn--primary",
-            form: { data: { turbo_confirm: confirm_msg } } %>
+      <%# A reviewer who left a checklist has to be answered through the modal
+          that renders it - posting straight from here would walk into
+          ActionItemGate with nothing ticked and nowhere to tick it. Falls back to
+          the one-click post when there is nothing to acknowledge, or when the
+          modal isn't on the page (show.html.erb only renders it while the ship is
+          still in changes). %>
+      <% recert_modal_id = local_assigns[:recert_modal_id] %>
+      <% if decision.gates_resubmission? && recert_modal_id.present? %>
+        <button type="button"
+                class="recert-modal__btn recert-modal__btn--primary"
+                onclick="document.getElementById(<%= recert_modal_id.to_json %>).showModal()">
+          Request re-certification
+        </button>
+      <% else %>
+        <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
+        <%= button_to "Request re-certification",
+              project_recertification_path(project),
+              method: :post,
+              class: "recert-modal__btn recert-modal__btn--primary",
+              form: { data: { turbo_confirm: confirm_msg } } %>
+      <% end %>
     <% end %>
   <% end %>
 </article>
