@@ -18,14 +18,24 @@ Rails.application.configure do
   # Cache assets for far-future expiry since they are all digest stamped.
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
+  # Host this instance is served from. Defaults to the canonical production host;
+  # override it on self-hosted deploys so asset URLs, links and mailers point at
+  # the domain actually serving the app.
+  app_host = ENV.fetch("APP_HOST", "stardance.hackclub.com")
+
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
-  config.asset_host = "https://stardance.hackclub.com"
+  config.asset_host = ENV.fetch("ASSET_HOST", "https://#{app_host}")
 
   # Proxy mode for CDN
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :cloudflare
+  # The R2 service is built from credentials, which are absent during image builds
+  # and on deploys without the production master key. Fall back to disk there
+  # rather than failing to boot on a nil bucket name.
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE") {
+    Rails.application.credentials.dig(:cloudflare, :bucket).present? ? "cloudflare" : "local"
+  }.to_sym
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
@@ -70,8 +80,8 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates and URL helpers (e.g. sitemap job).
-  config.action_controller.default_url_options = { host: "stardance.hackclub.com", protocol: "https" }
-  config.action_mailer.default_url_options = { host: "stardance.hackclub.com", protocol: "https" }
+  config.action_controller.default_url_options = { host: app_host, protocol: "https" }
+  config.action_mailer.default_url_options = { host: app_host, protocol: "https" }
 
   # Configure Loops SMTP for transactional emails
   config.action_mailer.delivery_method = :smtp
