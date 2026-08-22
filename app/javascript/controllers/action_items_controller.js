@@ -1,15 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
-// Holds a resubmission until the builder has ticked every action item their
-// reviewer left. Goes on the form; the boxes live in projects/_action_items.
-//
-// The submit button starts enabled in the markup and is disabled here on
-// connect, never server-side: a builder whose JS never runs has to still be able
-// to press it and be turned down by ActionItemGate, rather than face a button
-// that can never enable itself. The same gate is enforced server-side, so
-// nothing here is load-bearing for correctness - it just saves a round trip.
 export default class extends Controller {
-  static targets = ["checkbox", "error", "progress", "submit", "block", "heading"];
+  static targets = ["checkbox", "error", "progress", "submit", "block", "hint"];
 
   connect() {
     this.report();
@@ -26,27 +18,20 @@ export default class extends Controller {
     if (this.allTicked) this.clearError();
   }
 
-  // Everything ticked turns the block from a list of outstanding work into a
-  // green light: the warn accent goes mint and the heading says so. Both strings
-  // come off the heading's data attributes so the copy stays in the view.
   syncReadyState() {
     if (this.hasBlockTarget) {
       this.blockTarget.classList.toggle("action-items--ready", this.allTicked);
     }
 
-    if (this.hasHeadingTarget) {
-      const { ready, pending } = this.headingTarget.dataset;
-      this.headingTarget.textContent = this.allTicked ? ready : pending;
+    if (this.hasHintTarget) {
+      const { ready, pending } = this.hintTarget.dataset;
+      this.hintTarget.textContent = this.allTicked ? ready : pending;
     }
   }
 
   syncSubmit() {
     if (!this.hasSubmitTarget) return;
 
-    // The funding form has more to say about its own button than this does — a
-    // tier, an amount inside that tier, the BOM confirmed — and it already
-    // accounts for the checklist, so it stays the single authority there.
-    // Enabling on "all ticked" alone would let a request through with no tier.
     const form = this.element.closest("form") || this.element;
     if (form.dataset.tierMaxes && typeof window.fundingValidate === "function") {
       window.fundingValidate(form);
@@ -56,7 +41,6 @@ export default class extends Controller {
     this.submitTarget.disabled = !this.allTicked;
   }
 
-  // Backstop for the case where something else re-enabled the button.
   guard(event) {
     if (this.allTicked) return;
 
