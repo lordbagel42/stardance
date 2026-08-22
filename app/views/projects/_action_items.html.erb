@@ -15,8 +15,13 @@
     the submit event this partial's targets guard reaches the controller.
 
     Locals: review - a returned Certification::Reviewable. %>
-<div class="action-items">
-  <h4 class="action-items__heading">Before you submit again</h4>
+<div class="action-items" data-action-items-target="block">
+  <%# Copy for both states lives here rather than in the controller, so the
+      wording stays with the rest of the view. %>
+  <h4 class="action-items__heading"
+      data-action-items-target="heading"
+      data-pending="Before you submit again"
+      data-ready="Ready to submit!">Before you submit again</h4>
   <p class="action-items__hint">Your last reviewer asked for these changes. Tick each one to confirm you've done it.</p>
 
   <ul class="action-items__list">

@@ -19,6 +19,25 @@
     color-mix(in srgb, var(--color-brand-salmon) 22%, transparent);
   border-radius: calc(var(--border-radius) - 2px);
   text-align: left;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease;
+}
+
+// Every item ticked: the block stops listing outstanding work and becomes a
+// green light, so it swaps the salmon warn accent for mint. Declared after the
+// base block so the equal-specificity border and background lose to it.
+.action-items--ready {
+  background: color-mix(
+    in srgb,
+    var(--color-brand-mint) 6%,
+    rgba(255, 255, 255, 0.02)
+  );
+  border-color: color-mix(in srgb, var(--color-brand-mint) 32%, transparent);
+
+  .action-items__heading {
+    color: var(--color-brand-mint);
+  }
 }
 
 .action-items__prose {
@@ -44,6 +63,7 @@
   text-transform: uppercase;
   color: var(--color-brand-salmon);
   opacity: 0.85;
+  transition: color 200ms ease;
 }
 
 .action-items__hint {

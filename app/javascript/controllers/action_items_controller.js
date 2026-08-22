@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus";
 // that can never enable itself. The same gate is enforced server-side, so
 // nothing here is load-bearing for correctness - it just saves a round trip.
 export default class extends Controller {
-  static targets = ["checkbox", "error", "progress", "submit"];
+  static targets = ["checkbox", "error", "progress", "submit", "block", "heading"];
 
   connect() {
     this.report();
@@ -21,8 +21,23 @@ export default class extends Controller {
       this.progressTarget.textContent = `${this.tickedCount} of ${total} confirmed`;
     }
 
+    this.syncReadyState();
     this.syncSubmit();
     if (this.allTicked) this.clearError();
+  }
+
+  // Everything ticked turns the block from a list of outstanding work into a
+  // green light: the warn accent goes mint and the heading says so. Both strings
+  // come off the heading's data attributes so the copy stays in the view.
+  syncReadyState() {
+    if (this.hasBlockTarget) {
+      this.blockTarget.classList.toggle("action-items--ready", this.allTicked);
+    }
+
+    if (this.hasHeadingTarget) {
+      const { ready, pending } = this.headingTarget.dataset;
+      this.headingTarget.textContent = this.allTicked ? ready : pending;
+    }
   }
 
   syncSubmit() {
