@@ -150,6 +150,11 @@
 // checkbox sits level with the input rather than with the input's label, and
 // wrapping so the pair stacks again on a narrow dialog.
 .funding-modal__request-row {
+  // One height for both controls. They share padding and border, so without this
+  // the type-size difference between the input (16px) and the checkbox label
+  // (14px) decides how tall each box is and their top edges sit 2-3px apart.
+  --funding-control-height: 3rem;
+
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -161,11 +166,22 @@
     flex: 0 0 auto;
   }
 
-  .funding-modal__bom-check {
-    // Takes the rest of the row, but drops to its own line before it gets too
-    // cramped to read.
-    flex: 1 1 15rem;
+  // Hint stacked over its checkbox, so the checkbox still bottom-aligns with the
+  // amount input the way it would on its own.
+  .funding-modal__bom {
+    flex: 1 1 17rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
   }
+}
+
+.funding-modal__bom-hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-space-text-muted);
+  text-wrap: pretty;
 }
 
 .funding-modal__amount {
@@ -177,6 +193,7 @@
 
   input {
     max-width: 12rem;
+    min-height: var(--funding-control-height, auto);
     padding: var(--space-s) var(--space-m);
     background-color: var(--color-set-1-bg);
     color: var(--color-space-text);
@@ -214,6 +231,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-s);
+  min-height: var(--funding-control-height, auto);
   // Matches the amount input's vertical padding so the two sit level in the row.
   padding: var(--space-s) var(--space-m);
   background: var(--color-overlay-light-soft);
