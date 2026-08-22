@@ -7,7 +7,7 @@ class Projects::RecertificationsController < ApplicationController
     authorize @project, :request_recertification?
 
     @project.with_lock do
-      latest_review = @project.ship_reviews.order(created_at: :desc, id: :desc).first
+      latest_review = @project.latest_ship_review
 
       if latest_review&.pending?
         redirect_to project_path(@project), alert: "A review is already pending for this project." and return

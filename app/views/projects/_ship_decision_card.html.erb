@@ -9,7 +9,7 @@
   reviewer = decision.reviewer
   reviewer_name = reviewer&.display_name.presence
   returned = decision.returned? && project.needs_changes? &&
-    decision == project.ship_reviews.order(created_at: :desc, id: :desc).first
+    decision == project.latest_ship_review
 %>
 
 <article id="<%= dom_id(decision) %>"
@@ -73,7 +73,7 @@
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
       <% recert_modal_id = local_assigns[:recert_modal_id] %>
-      <% if decision.gates_resubmission? && recert_modal_id.present? %>
+      <% if is_member && decision.gates_resubmission? && recert_modal_id.present? %>
         <button type="button"
                 class="recert-modal__btn recert-modal__btn--primary"
                 onclick="document.getElementById(<%= recert_modal_id.to_json %>).showModal()">

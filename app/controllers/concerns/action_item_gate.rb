@@ -12,6 +12,9 @@ module ActionItemGate
 
   def action_items_block_resubmission?(review)
     return false unless review&.returned?
+    # A reviewer acting on a builder's behalf isn't the person being asked to
+    # confirm the work, so the checklist isn't theirs to tick.
+    return false unless posted_by_project_member?
 
     alert = case review.action_items_blocker(
               acknowledged: params[:acknowledged_action_items],
@@ -24,5 +27,10 @@ module ActionItemGate
 
     redirect_to project_path(@project), alert: alert
     true
+  end
+
+  # Mirrors ProjectPolicy#member?, which is private to the policy.
+  def posted_by_project_member?
+    current_user.present? && current_user.memberships.exists?(project: @project)
   end
 end

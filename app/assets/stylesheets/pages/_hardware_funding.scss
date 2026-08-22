@@ -235,12 +235,11 @@
     border-color 120ms ease,
     background 120ms ease;
 
-  // Guarded: without :not() these would outrank the --error border.
-  &:hover:not(#{&}--error) {
+  &:hover {
     border-color: var(--color-border-input-focus);
   }
 
-  &:focus-within:not(#{&}--error) {
+  &:focus-within {
     border-color: var(--color-brand-lilac);
     box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
   }
@@ -248,19 +247,6 @@
   &:has(input[type="checkbox"]:checked) {
     background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
     border-color: color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
-  }
-
-  // Set when a submit is attempted with the box unticked, so the requirement
-  // points at itself instead of the form failing silently.
-  &--error {
-    border-color: var(--color-brand-salmon);
-    background: var(--color-brand-salmon-soft);
-
-    input[type="checkbox"] {
-      accent-color: var(--color-brand-salmon);
-      outline: 2px solid var(--color-brand-salmon);
-      outline-offset: 2px;
-    }
   }
 
   input[type="checkbox"] {

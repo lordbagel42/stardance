@@ -1237,7 +1237,7 @@
       <%= form_with url: project_funding_request_path(@project),
                     method: :post,
                     data: { turbo: false },
-                    html: { class: "ship-modal__form", onsubmit: "return fundingSubmit(this)",
+                    html: { class: "ship-modal__form",
                             data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json,
                                     controller: ("action-items" if design_gated),
                                     action: ("submit->action-items#guard" if design_gated) }.compact } do |form| %>
@@ -1277,10 +1277,7 @@
                 out for info!
               </p>
 
-              <%# No `required`: the browser blocks submission silently when the
-                  control is scrolled out of view inside a dialog, so the check is
-                  enforced on submit instead, where it can point at itself. %>
-              <label class="funding-modal__bom-check">
+                <label class="funding-modal__bom-check">
                 <input type="checkbox" onchange="fundingValidate(this.form)">
                 <span>I have a <code>BOM.csv</code> in the root of my repository</span>
               </label>
@@ -1311,12 +1308,8 @@
       <% end %>
     </dialog>
     <script>
-      function fundingBomLabel(form) {
-        return form.querySelector(".funding-modal__bom-check");
-      }
-
       function fundingActionItemsPending(form) {
-        var boxes = form.querySelectorAll(".action-items__checkbox");
+        var boxes = form.querySelectorAll('[name^="acknowledged_action_items"]');
         return Array.prototype.some.call(boxes, function (box) {
           return !box.checked;
         });
@@ -1347,25 +1340,6 @@
           !amountValid ||
           (bomCheck && !bomCheck.checked) ||
           fundingActionItemsPending(form);
-
-        if (bomCheck && bomCheck.checked) {
-          fundingBomLabel(form).classList.remove("funding-modal__bom-check--error");
-        }
-      }
-
-      function fundingSubmit(form) {
-        var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
-        if (bomCheck && !bomCheck.checked) {
-          var err = form.querySelector(".funding-request__error");
-          fundingBomLabel(form).classList.add("funding-modal__bom-check--error");
-          if (err) {
-            err.textContent = "Confirm you have a BOM.csv in your repository before submitting.";
-            err.hidden = false;
-          }
-          bomCheck.focus();
-          return false;
-        }
-        return true;
       }
 
       document.querySelectorAll("form[data-tier-maxes]").forEach(fundingValidate);

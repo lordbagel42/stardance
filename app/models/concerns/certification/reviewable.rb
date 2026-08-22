@@ -154,7 +154,9 @@ module Certification
       return :unacknowledged if digest.blank?
       return :stale unless digest == action_items_digest
 
-      ticked = Array(acknowledged).map { |index| index.to_i }
+      # Integer(…, exception: false) rather than to_i: the params are whatever the
+      # client posted, and a hash-shaped value has no to_i.
+      ticked = Array(acknowledged).filter_map { |index| Integer(index, exception: false) }
       return :unacknowledged unless action_items.each_index.all? { |index| ticked.include?(index) }
 
       nil

@@ -2228,8 +2228,8 @@ turbo-frame#project_hero {
     color: var(--color-set-1-bg);
   }
 
-  &--primary:hover,
-  &--primary:focus-visible {
+  &--primary:hover:not(:disabled),
+  &--primary:focus-visible:not(:disabled) {
     filter: brightness(1.05);
     outline: none;
   }

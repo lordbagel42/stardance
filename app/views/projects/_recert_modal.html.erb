@@ -1,5 +1,5 @@
-<% recert_review = project.ship_reviews.order(created_at: :desc, id: :desc).first %>
-<% gated = recert_review&.returned? && recert_review.gates_resubmission? %>
+<% recert_review = project.latest_ship_review %>
+<% gated = is_member && recert_review&.returned? && recert_review.gates_resubmission? %>
 <dialog id="recert-modal-<%= project.id %>"
         class="recert-modal"
         data-controller="modal"
