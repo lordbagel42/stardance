@@ -192,7 +192,11 @@
   color: var(--color-space-text);
 
   input {
-    max-width: 12rem;
+    // Explicit width, not intrinsic: fundingValidate sets the `max` attribute
+    // when a tier is picked, and a number input sized from its constraints
+    // visibly narrows the moment that attribute appears.
+    width: 12rem;
+    max-width: 100%;
     min-height: var(--funding-control-height, auto);
     padding: var(--space-s) var(--space-m);
     background-color: var(--color-set-1-bg);
