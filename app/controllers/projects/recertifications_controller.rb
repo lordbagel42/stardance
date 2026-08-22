@@ -13,8 +13,6 @@ class Projects::RecertificationsController < ApplicationController
         redirect_to project_path(@project), alert: "A review is already pending for this project." and return
       end
 
-      # The builder has to acknowledge the returned review's checklist before
-      # the project goes back in the queue.
       return if action_items_block_resubmission?(latest_review)
 
       @project.resubmit_for_review!

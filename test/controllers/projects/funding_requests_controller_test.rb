@@ -215,9 +215,6 @@ class Projects::FundingRequestsControllerTest < ActionDispatch::IntegrationTest
     request
   end
 
-
-  # A resubmission that ticks the given action items, fingerprinted against the
-  # checklist as it reads right now.
   def acknowledging(request, indices:)
     {
       complexity_tier: 2,

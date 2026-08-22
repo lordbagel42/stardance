@@ -9,9 +9,6 @@ class Projects::FundingRequestsController < ApplicationController
   def create
     authorize @project, :ship?
 
-    # Resubmitting after a return: the builder has to acknowledge the reviewer's
-    # checklist first. A first-time request has no returned review, so it never
-    # meets this.
     return if action_items_block_resubmission?(@project.latest_funding_request)
 
     # Kit missions submit no tier/amount; the model defaults them. Only forward

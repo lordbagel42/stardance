@@ -72,12 +72,6 @@
 
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
-      <%# A reviewer who left a checklist has to be answered through the modal
-          that renders it - posting straight from here would walk into
-          ActionItemGate with nothing ticked and nowhere to tick it. Falls back to
-          the one-click post when there is nothing to acknowledge, or when the
-          modal isn't on the page (show.html.erb only renders it while the ship is
-          still in changes). %>
       <% recert_modal_id = local_assigns[:recert_modal_id] %>
       <% if decision.gates_resubmission? && recert_modal_id.present? %>
         <button type="button"

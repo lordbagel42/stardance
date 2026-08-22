@@ -935,15 +935,12 @@
         <% ship_index = 0 %>
         <% @timeline_entries.each do |entry| %>
           <% if entry.is_a?(Certification::Ship) %>
-            <%# Same condition the recert modal itself renders on, so the card's
-                button never points at a dialog that was never emitted. %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
                        recert_modal_id: recert_id %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
-            <%# The resubmit button reuses the funding modal, so this has to stay
-                the same condition the modal itself renders on - a button whose
-                dialog was never emitted just throws on showModal(). %>
+            <%# The resubmit button reuses the funding modal, which only renders
+                while the project is still in the design stage. %>
             <% resubmit_id = (Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage?) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
@@ -1195,20 +1192,13 @@
 
   <% end %>
 
-  <%# Funding request popup — design-stage hardware only. Deliberately outside
-      the time-tracking block above: both buttons that open it (the first-time
-      submit, and the resubmit on a returned request) render on exactly the
-      condition below, and neither asks for a linked Hackatime account. Nesting
-      it under one left both buttons calling showModal() on a null. %>
+  <%# Funding request popup — design-stage hardware only. Mirrors the ship
+      post modal but collects a complexity tier + requested amount. %>
   <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"
             aria-label="Request project funding">
-      <%# This modal doubles as the resubmit form after a design is returned
-          (see the resubmit button on the funding request card), so it carries
-          the reviewer's checklist when there is one to acknowledge. A
-          first-time request has no returned review and renders as before. %>
       <% returned_design = @project.latest_funding_request %>
       <% design_gated = returned_design&.returned? && returned_design.gates_resubmission? %>
       <% if @project.awards_design_kit? %>
@@ -1244,9 +1234,6 @@
         </div>
       <% end %>
       <% else %>
-      <%# The Stimulus bindings go in html[:data] rather than alongside
-          turbo: false, because form_with lets html[:data] replace a top-level
-          :data outright rather than merging the two. %>
       <%= form_with url: project_funding_request_path(@project),
                     method: :post,
                     data: { turbo: false },
@@ -1275,16 +1262,12 @@
             <% end %>
           </fieldset>
 
-          <%# How much, and whether the parts list backing it exists, are one
-              decision - so they share a row. %>
           <div class="funding-modal__request-row">
             <label class="funding-modal__amount">
               <span>Amount requested ($)</span>
               <%= form.number_field :requested_amount, min: 1, step: 1, required: true, class: "funding-modal__amount-input", oninput: "fundingValidate(this.form)" %>
             </label>
 
-            <%# Hint above its checkbox, mirroring the label-above-input shape of
-                the amount beside it. %>
             <div class="funding-modal__bom">
               <p class="funding-modal__bom-hint">
                 Don't have one? Check
@@ -1332,9 +1315,6 @@
         return form.querySelector(".funding-modal__bom-check");
       }
 
-      // True while the reviewer's checklist still has something unticked. Only
-      // a returned design renders those boxes, so a first-time request always
-      // reads false here.
       function fundingActionItemsPending(form) {
         var boxes = form.querySelectorAll(".action-items__checkbox");
         return Array.prototype.some.call(boxes, function (box) {
@@ -1359,11 +1339,8 @@
         err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
         err.hidden = !over;
 
-        // Everything the request needs before it can go: a tier, an amount that
-        // is a real number within that tier, the BOM confirmed, and any checklist
-        // the reviewer left acknowledged. This is the single authority over the
-        // button for this form - it runs on every tier/amount change, so anything
-        // it leaves out would be re-enabled the next time a field moved.
+        // Reruns on every field change, so every condition has to be here or the
+        // button gets re-enabled — including the action items.
         var amountValid = !isNaN(amount) && amount >= 1 && !over;
         submit.disabled =
           !tier ||
@@ -1391,10 +1368,6 @@
         return true;
       }
 
-      // Gray the button out before anyone touches the form. It ships enabled in
-      // the markup on purpose - a builder whose JS never runs has to still be
-      // able to press it and be validated server-side - so the first pass has to
-      // happen here rather than in the ERB.
       document.querySelectorAll("form[data-tier-maxes]").forEach(fundingValidate);
     </script>
   <% end %>

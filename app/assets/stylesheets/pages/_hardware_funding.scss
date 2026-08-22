@@ -146,13 +146,7 @@
   }
 }
 
-// The amount and the BOM confirmation share a row. Bottom-aligned so the
-// checkbox sits level with the input rather than with the input's label, and
-// wrapping so the pair stacks again on a narrow dialog.
 .funding-modal__request-row {
-  // One height for both controls. They share padding and border, so without this
-  // the type-size difference between the input (16px) and the checkbox label
-  // (14px) decides how tall each box is and their top edges sit 2-3px apart.
   --funding-control-height: 3rem;
 
   display: flex;
@@ -160,14 +154,10 @@
   align-items: flex-end;
   gap: var(--space-m);
 
-  // Layout only in here: the checkbox's own colours stay on its block below, so
-  // the --error modifier isn't outranked by a more specific selector.
   .funding-modal__amount {
     flex: 0 0 auto;
   }
 
-  // Hint stacked over its checkbox, so the checkbox still bottom-aligns with the
-  // amount input the way it would on its own.
   .funding-modal__bom {
     flex: 1 1 17rem;
     display: flex;
@@ -192,9 +182,7 @@
   color: var(--color-space-text);
 
   input {
-    // Explicit width, not intrinsic: fundingValidate sets the `max` attribute
-    // when a tier is picked, and a number input sized from its constraints
-    // visibly narrows the moment that attribute appears.
+    // Explicit: a number input narrows itself once `max` is set on it.
     width: 12rem;
     max-width: 100%;
     min-height: var(--funding-control-height, auto);
@@ -236,7 +224,6 @@
   align-items: center;
   gap: var(--space-s);
   min-height: var(--funding-control-height, auto);
-  // Matches the amount input's vertical padding so the two sit level in the row.
   padding: var(--space-s) var(--space-m);
   background: var(--color-overlay-light-soft);
   border: 2px solid var(--color-border-input);
@@ -248,9 +235,7 @@
     border-color 120ms ease,
     background 120ms ease;
 
-  // Both skip the error state: these are more specific than the --error
-  // modifier, so without the guard hovering a flagged checkbox would quietly
-  // repaint away the salmon that is pointing at it.
+  // Guarded: without :not() these would outrank the --error border.
   &:hover:not(#{&}--error) {
     border-color: var(--color-border-input-focus);
   }
@@ -260,7 +245,6 @@
     box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
   }
 
-  // Ticked reads as settled, the same way an acknowledged action item does.
   &:has(input[type="checkbox"]:checked) {
     background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
     border-color: color-mix(in srgb, var(--color-brand-mint) 45%, transparent);

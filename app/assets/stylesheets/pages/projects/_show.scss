@@ -1883,11 +1883,6 @@ turbo-frame#project_hero {
   margin: 0;
   color: var(--color-space-text);
 
-  // The panel below owns the height cap and the scrolling: it carries the
-  // border, radius and background, so scrolling *this* box instead would slide
-  // that frame out of view and clip the content against a square transparent
-  // edge.
-
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(2px);
@@ -1982,11 +1977,6 @@ turbo-frame#project_hero {
   translate: -50% -50%;
   margin: 0;
   color: var(--color-space-text);
-
-  // The panel below owns the height cap and the scrolling: it carries the
-  // border, radius and background, so scrolling *this* box instead would slide
-  // that frame out of view and clip the content against a square transparent
-  // edge.
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
@@ -2088,16 +2078,10 @@ turbo-frame#project_hero {
   margin: 0;
   color: var(--color-space-text);
 
-  // The panel below owns the height cap and the scrolling: it carries the
-  // border, radius and background, so scrolling *this* box instead would slide
-  // that frame out of view and clip the content against a square transparent
-  // edge.
-
   &::backdrop {
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(2px);
   }
-
 }
 
 // The ship-post step previews a full ship card, so give it more room.
@@ -2106,7 +2090,7 @@ turbo-frame#project_hero {
 }
 
 .ship-modal__panel {
-  // Capped and scrolled here rather than on the dialog — see the note above.
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
   max-height: 90vh;
   overflow-y: auto;
   display: flex;
@@ -2212,8 +2196,6 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
-  // Grayed out while the reviewer's checklist is unticked — see
-  // action_items_controller. Matches the .action-btn disabled convention.
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -2298,21 +2280,15 @@ turbo-frame#project_hero {
   margin: 0;
   color: var(--color-space-text);
 
-  // The panel below owns the height cap and the scrolling: it carries the
-  // border, radius and background, so scrolling *this* box instead would slide
-  // that frame out of view and clip the content against a square transparent
-  // edge.
-
   &::backdrop {
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(3px);
   }
-
 }
 
 .recert-modal__panel {
   position: relative;
-  // Capped and scrolled here rather than on the dialog — see the note above.
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
   max-height: 90vh;
   overflow-y: auto;
   display: flex;
@@ -2420,8 +2396,6 @@ turbo-frame#project_hero {
   overflow-wrap: anywhere;
 }
 
-// Wraps the checklist and the actions row, so a gated resubmission posts its
-// ticks alongside the request.
 .recert-modal__form {
   display: flex;
   flex-direction: column;
