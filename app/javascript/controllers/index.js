@@ -241,12 +241,6 @@ application.register("post-panel", PostPanelController)
 import PrizeFloatController from "./prize_float_controller"
 application.register("prize-float", PrizeFloatController)
 
-import ShopItemEnableGuardController from "./shop_item_enable_guard_controller";
-application.register("shop-item-enable-guard", ShopItemEnableGuardController);
-
-import ShopWishlistController from "./shop_wishlist_controller";
-application.register("shop-wishlist", ShopWishlistController);
-
 import ProfileEditController from "./profile_edit_controller"
 application.register("profile-edit", ProfileEditController)
 
@@ -306,6 +300,9 @@ application.register("share-purchase", SharePurchaseController)
 
 import ShopController from "./shop_controller"
 application.register("shop", ShopController)
+
+import ShopItemEnableGuardController from "./shop_item_enable_guard_controller"
+application.register("shop-item-enable-guard", ShopItemEnableGuardController)
 
 import ShopWishlistController from "./shop_wishlist_controller"
 application.register("shop-wishlist", ShopWishlistController)
