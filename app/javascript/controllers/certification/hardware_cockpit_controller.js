@@ -77,9 +77,9 @@ export default class extends Controller {
       if (event.key === "Escape") return this.consume(event, () => this.closeLightbox());
       // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
       if (this.lbVideo) {
-        if (event.code === "KeyJ") return this.consume(event, () => this.reversePlay());
-        if (event.code === "KeyK") return this.consume(event, () => this.pausePlayer());
-        if (event.code === "KeyL") return this.consume(event, () => this.forwardPlay());
+        if (event.code === "KeyJ") return this.consume(event, () => this.nudgeRate(-1));
+        if (event.code === "KeyK") return this.consume(event, () => this.togglePlay());
+        if (event.code === "KeyL") return this.consume(event, () => this.nudgeRate(1));
         if (event.key === "ArrowLeft") return this.consume(event, () => this.stepVideo(event.shiftKey ? -10 : -1));
         if (event.key === "ArrowRight") return this.consume(event, () => this.stepVideo(event.shiftKey ? 10 : 1));
         return;
@@ -303,10 +303,8 @@ export default class extends Controller {
       video.className = "hardware-cockpit__lightbox-media";
       this.lbStage.appendChild(video);
       this.lbVideo = video;
-      this.reverseSpeed = 1;
-      [ "play", "pause", "ratechange" ].forEach((e) =>
-        video.addEventListener(e, () => this.updatePlayerCaption())
-      );
+      this.rate = 1;      // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
+      this.lastRate = 1;  // K resumes here after a pause
       this.updatePlayerCaption();
     } else {
       const img = document.createElement("img");
@@ -320,28 +318,48 @@ export default class extends Controller {
     }
   }
 
-  // ── Premiere-style JKL video transport ───────────────────────────────────
-  // HTML5 video can't play backwards, so J is emulated with a timer that walks
-  // currentTime back; repeated J/L step through speed ladders.
-  forwardPlay() {
+  // ── Premiere-style JKL transport ─────────────────────────────────────────
+  // One shared signed-speed ladder: L nudges toward faster-forward, J toward
+  // faster-reverse, meeting in the middle (…4×▶ 2×▶ 1×▶ | 1×◀ 2×◀…). So from 8×
+  // forward, J steps down to 4×. HTML5 video can't play backwards, so reverse is
+  // emulated with a timer that walks currentTime back.
+  RATE_LADDER = [ -8, -4, -2, -1, 1, 2, 4, 8 ];
+
+  nudgeRate(direction) {
     if (!this.lbVideo) return;
-    this.stopReverse();
-    const rates = [ 1, 1.5, 2, 4, 8 ];
-    if (this.lbVideo.paused) {
-      this.lbVideo.playbackRate = 1;
-      this.lbVideo.play();
+    let next;
+    if (!this.rate) {
+      next = direction > 0 ? 1 : -1;
     } else {
-      const i = rates.indexOf(this.lbVideo.playbackRate);
-      this.lbVideo.playbackRate = rates[Math.min((i < 0 ? 0 : i) + 1, rates.length - 1)];
+      const i = this.RATE_LADDER.indexOf(this.rate);
+      next = i === -1
+        ? (direction > 0 ? 1 : -1)
+        : this.RATE_LADDER[Math.max(0, Math.min(this.RATE_LADDER.length - 1, i + direction))];
     }
-    this.updatePlayerCaption();
+    this.applyRate(next);
   }
 
-  reversePlay() {
+  // K: pause when playing, resume the last speed when paused.
+  togglePlay() {
     if (!this.lbVideo) return;
-    this.lbVideo.pause();
-    this.reverseSpeed = this.reverseTimer ? Math.min(this.reverseSpeed * 2, 8) : 1;
-    this.startReverse();
+    this.applyRate(this.rate ? 0 : this.lastRate || 1);
+  }
+
+  applyRate(rate) {
+    if (!this.lbVideo) return;
+    this.rate = rate;
+    if (rate) this.lastRate = rate;
+    this.stopReverse();
+    if (rate > 0) {
+      this.lbVideo.playbackRate = rate;
+      this.lbVideo.play();
+    } else if (rate < 0) {
+      this.lbVideo.pause();
+      this.reverseSpeed = -rate;
+      this.startReverse();
+    } else {
+      this.lbVideo.pause();
+    }
     this.updatePlayerCaption();
   }
 
@@ -352,8 +370,7 @@ export default class extends Controller {
       const t = this.lbVideo.currentTime - this.reverseSpeed * 0.066;
       if (t <= 0) {
         this.lbVideo.currentTime = 0;
-        this.stopReverse();
-        this.updatePlayerCaption();
+        this.applyRate(0); // hit the start → stop
       } else {
         this.lbVideo.currentTime = t;
       }
@@ -365,16 +382,9 @@ export default class extends Controller {
     this.reverseTimer = null;
   }
 
-  pausePlayer() {
-    this.stopReverse();
-    this.lbVideo?.pause();
-    this.updatePlayerCaption();
-  }
-
   stepVideo(seconds) {
     if (!this.lbVideo) return;
-    this.stopReverse();
-    this.lbVideo.pause();
+    this.applyRate(0); // frame-scrub pauses first
     const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
     this.lbVideo.currentTime = Math.max(0, Math.min(max, this.lbVideo.currentTime + seconds));
     this.updatePlayerCaption();
@@ -382,10 +392,9 @@ export default class extends Controller {
 
   updatePlayerCaption() {
     if (!this.lbVideo || !this.lbCaption) return;
-    let mode;
-    if (this.reverseTimer) mode = `◀ ${this.reverseSpeed}×`;
-    else if (this.lbVideo.paused) mode = "❚❚ paused";
-    else mode = `▶ ${this.lbVideo.playbackRate}×`;
+    const mode = this.rate > 0 ? `▶ ${this.rate}×`
+      : this.rate < 0 ? `◀ ${-this.rate}×`
+      : "❚❚ paused";
     this.lbCaption.textContent =
       `${this.lbIndex + 1} / ${this.lbItems.length} · ${mode} · J/K/L · ←/→ scrub (shift = 10s) · esc`;
   }
