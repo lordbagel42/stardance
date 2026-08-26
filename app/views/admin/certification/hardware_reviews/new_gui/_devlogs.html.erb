@@ -22,7 +22,7 @@
   <div class="hardware-cockpit__devlogs" data-role="devlog-scroller">
     <% if devlogs.present? %>
       <% devlogs.each do |devlog| %>
-        <% timelapses = @devlog_timelapses&.dig(devlog.id) %>
+        <% recordings = @devlog_timelapses&.dig(devlog.id) %>
         <article class="hardware-cockpit__devlog" data-time="<%= devlog.created_at.to_i %>">
           <header class="hardware-cockpit__devlog-head">
             <span class="hardware-cockpit__devlog-date">
@@ -41,21 +41,26 @@
             </div>
           <% end %>
 
-          <%# Lapse timelapses recorded during this devlog's window. %>
-          <% if timelapses.present? %>
+          <%# Recordings (Lapse timelapses + Lookout sessions) recorded during this
+              devlog's window, from @devlog_timelapses (normalized in the concern). %>
+          <% if recordings.present? %>
             <div class="hardware-cockpit__timelapses">
-              <span class="hardware-cockpit__timelapses-label"><%= pluralize(timelapses.size, "timelapse") %> from Lapse</span>
+              <span class="hardware-cockpit__timelapses-label"><%= pluralize(recordings.size, "recording") %></span>
               <ul class="hardware-cockpit__timelapse-strip">
-                <% timelapses.each do |tl| %>
+                <% recordings.each do |rec| %>
                   <li>
-                    <a class="hardware-cockpit__timelapse" href="<%= tl[:playbackUrl] %>"
-                       target="_blank" rel="noopener noreferrer" title="<%= tl[:name].presence || "Timelapse" %>">
-                      <% if tl[:thumbnailUrl].present? %>
-                        <img class="hardware-cockpit__timelapse-thumb" src="<%= tl[:thumbnailUrl] %>" alt="" loading="lazy">
+                    <%# Click opens the in-app JKL player (openLapse preventDefaults);
+                        the href stays so middle/ctrl-click still opens the raw video. %>
+                    <a class="hardware-cockpit__timelapse" href="<%= rec[:playbackUrl] %>"
+                       target="_blank" rel="noopener noreferrer" title="<%= rec[:name] %>"
+                       data-action="certification--hardware-cockpit#openLapse">
+                      <% if rec[:thumbnailUrl].present? %>
+                        <img class="hardware-cockpit__timelapse-thumb" src="<%= rec[:thumbnailUrl] %>" alt="" loading="lazy">
                       <% else %>
                         <span class="hardware-cockpit__timelapse-thumb hardware-cockpit__timelapse-thumb--empty" aria-hidden="true">▶</span>
                       <% end %>
-                      <span class="hardware-cockpit__timelapse-dur"><%= format_clock(tl[:duration]) %></span>
+                      <span class="hardware-cockpit__timelapse-source"><%= rec[:source] %></span>
+                      <span class="hardware-cockpit__timelapse-dur"><%= format_clock(rec[:duration]) %></span>
                     </a>
                   </li>
                 <% end %>

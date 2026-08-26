@@ -452,6 +452,21 @@
     border-radius: 4px;
   }
 
+  // Source tag (Lapse / Lookout) in the tile's top-left corner.
+  &__timelapse-source {
+    position: absolute;
+    left: 0.2rem;
+    top: 0.2rem;
+    padding: 0 0.3rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-brand-off-white);
+    background: var(--color-backdrop);
+    border-radius: 4px;
+  }
+
   &__devlog-head {
     display: flex;
     align-items: center;

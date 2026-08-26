@@ -281,38 +281,58 @@ module HardwareReviewQueue
     @devlog_timelapses = timelapses_by_devlog(@devlogs)
   end
 
-  # Group the project's Lapse timelapses under the devlog whose work window they
-  # fall in (previous devlog's timestamp .. this devlog's timestamp). The newest
-  # devlog also absorbs any timelapses recorded since it, so nothing is hidden.
-  # There's no per-timelapse→devlog link upstream, so this is a time-window
-  # heuristic — good enough to show a reviewer which logs have footage.
+  # Group the project's recordings (Lapse timelapses + Lookout sessions) under the
+  # devlog whose work window they fall in (previous devlog's timestamp .. this
+  # devlog's timestamp). The newest devlog also absorbs anything recorded since it,
+  # so nothing is hidden. There's no per-recording→devlog link upstream, so this
+  # is a time-window heuristic — good enough to show which logs have footage.
   def timelapses_by_devlog(devlogs)
     return {} if devlogs.blank?
 
-    timelapses = cockpit_timelapses
-    return {} if timelapses.blank?
+    recordings = cockpit_recordings
+    return {} if recordings.blank?
 
     ascending = devlogs.sort_by(&:created_at)
     ascending.each_with_index.to_h do |devlog, i|
       lower = i.zero? ? Time.zone.at(0) : ascending[i - 1].created_at
       upper = i == ascending.length - 1 ? nil : devlog.created_at
-      [ devlog.id, timelapses.select { |tl|
-        recorded = tl[:recorded_at]
+      [ devlog.id, recordings.select { |rec|
+        recorded = rec[:recorded_at]
         recorded && recorded > lower && (upper.nil? || recorded <= upper)
       } ]
     end
   end
 
-  # The project's Lapse timelapses (cached), each annotated with a Ruby Time.
-  # Never raises — LapseService returns [] on any failure.
-  def cockpit_timelapses
-    Rails.cache.fetch([ "hardware_cockpit_timelapses", @project.id ], expires_in: RECORDINGS_CACHE_TTL) do
-      LapseService.timelapses_for_project(
+  # The project's recordings (cached, newest-first): Lapse timelapses AND Lookout
+  # sessions, normalized to one shape ({ playbackUrl:, thumbnailUrl:, duration:,
+  # name:, source:, recorded_at: }) so the devlog carousel renders both the same
+  # way. Never raises — each service returns [] on any failure.
+  def cockpit_recordings
+    Rails.cache.fetch([ "hardware_cockpit_recordings", @project.id ], expires_in: RECORDINGS_CACHE_TTL) do
+      lapse = LapseService.timelapses_for_project(
         hackatime_user_id: review_owner&.hackatime_identity&.uid,
         project_keys: @project.hackatime_keys
       ).map do |tl|
-        tl.merge(recorded_at: (Time.zone.at(tl[:createdAt].to_i / 1000) if tl[:createdAt].present?))
+        {
+          playbackUrl: tl[:playbackUrl], thumbnailUrl: tl[:thumbnailUrl],
+          duration: tl[:duration], name: tl[:name].presence || "Timelapse",
+          source: "Lapse",
+          recorded_at: (Time.zone.at(tl[:createdAt].to_i / 1000) if tl[:createdAt].present?)
+        }
       end
+
+      lookout = LookoutService.recordings_for_project(@project).map do |rec|
+        {
+          playbackUrl: rec[:video_url], thumbnailUrl: rec[:thumbnail_url],
+          duration: rec[:duration], name: rec[:mode].presence || "Lookout recording",
+          source: "Lookout", recorded_at: rec[:recorded_at]
+        }
+      end
+
+      (lapse + lookout)
+        .select { |rec| rec[:playbackUrl].present? }
+        .sort_by { |rec| rec[:recorded_at] || Time.zone.at(0) }
+        .reverse
     end
   end
 

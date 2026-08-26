@@ -252,6 +252,18 @@ export default class extends Controller {
     if (items.length) this.showLightbox(items, 0);
   }
 
+  // Clicking a timelapse tile opens it in the JKL lightbox instead of navigating
+  // to the raw R2 video. Loads the devlog's lapses starting at the clicked one.
+  openLapse(event) {
+    event.preventDefault();
+    const link = event.currentTarget;
+    const devlog = link.closest(".hardware-cockpit__devlog");
+    if (!devlog) return;
+    const links = Array.from(devlog.querySelectorAll(".hardware-cockpit__timelapse"));
+    const items = links.map((a) => ({ type: "video", src: a.href }));
+    if (items.length) this.showLightbox(items, Math.max(0, links.indexOf(link)));
+  }
+
   showLightbox(items, index) {
     this.closeLightbox();
     this.lbItems = items;
