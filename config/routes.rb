@@ -901,6 +901,12 @@ Rails.application.routes.draw do
         get :file_preview, on: :member
       end
 
+      # Reviewer-only internal notes about a project, shared across its funding
+      # and ship reviews and shown on the hardware review page. Append-only.
+      resources :projects, only: [] do
+        resources :review_notes, only: [ :create ]
+      end
+
       resources :devlog_reviews, only: [ :update ]
 
       get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"

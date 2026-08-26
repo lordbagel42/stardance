@@ -272,6 +272,9 @@ module HardwareReviewQueue
     @claim_expires_at =
       (@active_review.claim_expires_at if @active_review&.claim_held_by?(current_user))
     @past_reviews = past_reviews
+    # Reviewer-only internal notes ledger (newest first) — the cockpit notes card
+    # and the classic show both render it.
+    @review_notes = @project.review_notes.includes(:author).newest_first
     # Devlogs card — eager-load attachments + blobs so the media galleries don't N+1.
     @devlogs = @project.devlogs.with_attached_attachments.to_a
     # Lapse timelapses bucketed into the devlog each was recorded during.
