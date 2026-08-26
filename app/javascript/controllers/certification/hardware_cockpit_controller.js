@@ -121,6 +121,9 @@ export default class extends Controller {
     if (event.shiftKey && event.code === "KeyD") return this.consume(event, () => this.scrollToDevlogPart("body"));
     if (event.shiftKey && event.code === "KeyI") return this.consume(event, () => this.scrollToDevlogPart("gallery"));
     if (event.shiftKey && event.code === "KeyT") return this.consume(event, () => this.openTimelapse());
+    // shift+X ×2 arms/confirms permanent reject — inert while the button is
+    // disabled (the :hardware_permanent_rejections flag is off).
+    if (event.shiftKey && event.code === "KeyX") return this.consume(event, () => this.armVerdict("reject"));
     // shift+1..9 open images 1..9; shift+0 opens the 10th.
     if (event.shiftKey) {
       const img = this.digitIndex(event.code);
@@ -244,7 +247,7 @@ export default class extends Controller {
   // While a verdict is armed, spell out the confirm/cancel keys in the top bar.
   showEscHint(kind) {
     if (!this.hasEscHintTarget) return;
-    const key = kind === "approve" ? "ctrl+p" : kind === "return" ? "ctrl+e" : "the shortcut";
+    const key = kind === "approve" ? "ctrl+p" : kind === "return" ? "ctrl+e" : kind === "reject" ? "shift+X" : "the shortcut";
     this.escHintTarget.textContent = `press ${key} again to ${kind} · esc to cancel`;
     this.escHintTarget.hidden = false;
   }

@@ -1,0 +1,19 @@
+<%# The permanent-reject verdict control (design + build share it). Permanent
+    rejection is terminal: the project can never be submitted again in any form.
+    It's gated behind the :hardware_permanent_rejections flag — until that's on
+    for the reviewer the button is disabled with an explanatory tooltip, and the
+    endpoint refuses the verdict too. `name` is the form field
+    ("certification_funding_request[verdict]" or "certification_ship[status]"). %>
+<% if Flipper.enabled?(:hardware_permanent_rejections, current_user) %>
+  <button type="submit" form="cockpit-verdict-form"
+          name="<%= name %>" value="rejected"
+          class="hardware-cockpit__action hardware-cockpit__action--reject">
+    perm reject <kbd class="hardware-cockpit__kbd">shift+X ×2</kbd>
+  </button>
+<% else %>
+  <button type="button" disabled
+          title="Permanent rejections are currently disabled — enable the :hardware_permanent_rejections flag to use this."
+          class="hardware-cockpit__action hardware-cockpit__action--reject">
+    perm reject
+  </button>
+<% end %>

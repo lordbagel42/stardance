@@ -85,6 +85,17 @@ class Projects::RecertificationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "submitted", @project.reload.ship_status
   end
 
+  test "a permanently rejected project can't recertify" do
+    review = @project.ship_reviews.create!(status: :pending)
+    review.update!(reviewer: reviewer, status: :rejected)
+
+    assert @project.reload.hardware_permanently_rejected?
+    assert_no_difference -> { @project.ship_reviews.count } do
+      post project_recertification_path(@project)
+    end
+    assert_match(/can't be submitted again/i, flash[:alert])
+  end
+
   private
 
   def reviewer

@@ -1,5 +1,5 @@
 emoji = ":stardance_star:"
-verdict = approved ? "approved" : "returned"
+verdict = approved ? "approved" : rejected ? "rejected" : "returned"
 
 owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : "author"
 reviewer_mention = reviewer_slack_id.present? ? "<@#{reviewer_slack_id}>" : reviewer_name

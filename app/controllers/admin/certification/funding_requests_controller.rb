@@ -5,6 +5,13 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def update
     authorize @funding_request
+    # Permanent rejection is gated: the route is inert unless the flag is on for
+    # this reviewer, so a crafted request can't reject while the feature's off.
+    if funding_request_params[:verdict] == "rejected" && !Flipper.enabled?(:hardware_permanent_rejections, current_user)
+      return redirect_to hardware_review_path_for(@funding_request.project),
+                         alert: "Permanent rejections are currently disabled."
+    end
+
     @funding_request.assign_attributes(funding_request_params)
     attach_feedback_images
     if @funding_request.save
@@ -39,7 +46,9 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   # a kit, and no funding at all.
   def verdict_sentence
     title = @funding_request.project.title
-    if !@funding_request.approved?
+    if @funding_request.rejected?
+      "Permanently rejected “#{title}.”"
+    elsif !@funding_request.approved?
       "Returned funding for “#{title}.”"
     elsif @funding_request.issues_grant?
       "Approved funding for “#{title}.”"

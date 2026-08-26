@@ -2,6 +2,9 @@
 <% if review&.approved? %>
   <span class="notifications-item__verb">Your build was</span>
   <strong>approved</strong>
+<% elsif review&.rejected? %>
+  <span class="notifications-item__verb">Your build was</span>
+  <strong>rejected</strong>
 <% else %>
   <span class="notifications-item__verb">Your build</span>
   <strong>needs changes</strong>

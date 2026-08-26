@@ -8,7 +8,7 @@ module Certification
     # A reviewer's actual verdicts. The queue-routing corrections (misfiled,
     # withdrawn) are not decisions: they earn no bounty, stamp no decided_at,
     # and stay out of every queue statistic.
-    DECIDED_STATUSES = %w[approved returned].freeze
+    DECIDED_STATUSES = %w[approved returned rejected].freeze
     # Everything that ever counted as work in this queue. A rerouted review is
     # excluded exactly like an unsubmitted one: it got no verdict, and the work
     # reappears as its own record in the queue it belonged in.
@@ -128,7 +128,7 @@ module Certification
     end
 
     def post_verdict_to_hardware_review_channel!
-      locals = notification_locals.slice(:project_title, :project_url, :approved, :reviewer_name, :feedback)
+      locals = notification_locals.slice(:project_title, :project_url, :approved, :rejected, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id
       locals[:reviewer_slack_id] = reviewer&.slack_id

@@ -12,6 +12,12 @@ if approved
   end
 
   section "Log your build hours with a timelapse, then ship when you're ready."
+elsif rejected
+  header ":no_entry: Your funding request was rejected"
+
+  section "*<#{project_url}|#{project_title}>* can't be funded, and it can't be resubmitted for review.", markdown: true
+
+  section "*Feedback:* #{feedback}", markdown: true if feedback.present?
 else
   header ":pencil: Your funding request needs changes"
 

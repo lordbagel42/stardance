@@ -144,9 +144,15 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     end
     return redirect_to admin_certification_ship_path(@ship), alert: "Ship is no longer pending." unless @ship.pending?
 
+    # Permanent rejection is gated: inert unless :hardware_permanent_rejections is
+    # on for this reviewer.
+    if ship_params[:status] == "rejected" && !Flipper.enabled?(:hardware_permanent_rejections, current_user)
+      return redirect_to hardware_review_path_for(@ship.project), alert: "Permanent rejections are currently disabled."
+    end
+
     @ship.reviewer = current_user
     if @ship.update(ship_params)
-      verb = @ship.approved? ? "Approved" : "Returned"
+      verb = @ship.approved? ? "Approved" : @ship.rejected? ? "Rejected" : "Returned"
       count = ::Certification::Ship.reviewed_today(current_user)
       notice = "#{verb} \"#{@ship.project.title}.\" That's #{count} reviewed today. Keep going!"
       if params[:redirect_to_hardware].present?

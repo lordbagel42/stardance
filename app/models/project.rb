@@ -471,6 +471,15 @@ class Project < ApplicationRecord
     hardware_stage == "build"
   end
 
+  # A permanently-rejected hardware project has a terminal `rejected` funding
+  # request or ship. Such a project can never be submitted again in any form —
+  # the builder submission controllers (funding requests, ships, recertifications)
+  # refuse while this is true. Only reachable once a reviewer permanently rejects
+  # a review, which itself is gated behind :hardware_permanent_rejections.
+  def hardware_permanently_rejected?
+    certification_funding_requests.rejected.exists? || ship_reviews.rejected.exists?
+  end
+
   # Rolls the review state back when a ship is withdrawn. Without this the
   # project keeps `ship_status: submitted` and a `shipped_at`, so `shipped?`
   # stays true forever: no mission can be attached, deletion needs force, and

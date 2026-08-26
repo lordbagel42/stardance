@@ -81,7 +81,10 @@ module Certification
       approved: 1,
       returned: 2,
       misfiled: 3,
-      withdrawn: 4
+      withdrawn: 4,
+      # Permanent rejection (terminal) — see FundingRequest. Gated behind
+      # :hardware_permanent_rejections.
+      rejected: 5
     }, default: :pending
 
     EXTERNAL_DECISION_MAP = { "APPROVED" => :approved, "REJECTED" => :returned }.freeze
@@ -450,6 +453,7 @@ module Certification
         project_title: project.title,
         project_url: routes.project_url(project, **url_opts),
         approved: approved?,
+        rejected: rejected?,
         reviewer_name: reviewer&.display_name,
         feedback: feedback.to_s
       }
@@ -529,6 +533,11 @@ module Certification
             project.start_review! if project.may_start_review?
             project.return_for_changes! if project.may_return_for_changes?
           end
+        when :rejected
+          # Terminal: no approval cascade, no return-for-changes. The rejected
+          # ship review alone makes Project#hardware_permanently_rejected? true,
+          # which blocks any future submission; the owner is notified via
+          # BuildReviewed. Mirrors FundingRequest#apply_verdict_to_project!.
         end
       end
     end

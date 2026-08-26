@@ -1,9 +1,13 @@
 class Projects::ShipsController < ApplicationController
+  include HardwareRejectionGuard
+
   before_action :set_project
   before_action :require_shippable, only: [ :create ]
 
   def create
     authorize @project, :ship?
+
+    return if permanently_rejected_block(@project)
 
     latest_review = @project.latest_ship_review
     if latest_review&.pending?

@@ -26,6 +26,8 @@ module Notifications
         if record&.approved?
           approval = record.issues_grant? ? "approved for funding" : "approved"
           title.present? ? "#{title} was #{approval}" : "Your funding request was approved"
+        elsif record&.rejected?
+          title.present? ? "#{title} can't be funded" : "Your funding request was rejected"
         else
           title.present? ? "#{title} needs changes before funding" : "Your funding request needs changes"
         end

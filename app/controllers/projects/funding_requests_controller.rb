@@ -1,5 +1,6 @@
 class Projects::FundingRequestsController < ApplicationController
   include ActionItemGate
+  include HardwareRejectionGuard
 
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_project
@@ -9,6 +10,7 @@ class Projects::FundingRequestsController < ApplicationController
   def create
     authorize @project, :ship?
 
+    return if permanently_rejected_block(@project)
     return if action_items_block_resubmission?(@project.latest_funding_request)
 
     # Kit missions submit no tier/amount; the model defaults them. Only forward

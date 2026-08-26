@@ -19,6 +19,26 @@ class Admin::Certification::ShipsControllerTest < ActionDispatch::IntegrationTes
     sign_in @reviewer
   end
 
+  test "permanent rejection is refused while the flag is off" do
+    assert_no_changes -> { @hardware_ship.reload.status } do
+      patch admin_certification_ship_path(@hardware_ship),
+            params: { certification_ship: { status: "rejected" }, redirect_to_hardware: "1" }
+    end
+    assert_match(/currently disabled/i, flash[:alert])
+  end
+
+  test "permanent rejection goes through when the flag is on" do
+    Flipper.enable(:hardware_permanent_rejections)
+
+    patch admin_certification_ship_path(@hardware_ship),
+          params: { certification_ship: { status: "rejected" }, redirect_to_hardware: "1" }
+
+    assert @hardware_ship.reload.rejected?
+    assert @hardware.reload.hardware_permanently_rejected?
+  ensure
+    Flipper.disable(:hardware_permanent_rejections)
+  end
+
   test "the ship queue lists software ships and hides hardware ones" do
     get admin_certification_ships_path
 

@@ -1,10 +1,13 @@
 class Projects::RecertificationsController < ApplicationController
   include ActionItemGate
+  include HardwareRejectionGuard
 
   before_action :set_project
 
   def create
     authorize @project, :request_recertification?
+
+    return if permanently_rejected_block(@project)
 
     @project.with_lock do
       latest_review = @project.latest_ship_review

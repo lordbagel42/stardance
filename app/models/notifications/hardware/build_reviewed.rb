@@ -24,6 +24,8 @@ module Notifications
         title = record&.project&.title
         if record&.approved?
           title.present? ? "#{title} was approved" : "Your build was approved"
+        elsif record&.rejected?
+          title.present? ? "#{title} can't be certified" : "Your build was rejected"
         else
           title.present? ? "#{title} needs changes" : "Your build needs changes"
         end

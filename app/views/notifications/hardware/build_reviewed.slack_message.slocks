@@ -4,6 +4,12 @@ if approved
   section "*<#{project_url}|#{project_title}>* passed review. Your stardust payout is on its way.", markdown: true
 
   section "*Feedback:* #{feedback}", markdown: true if feedback.present?
+elsif rejected
+  header ":no_entry: Your build was rejected"
+
+  section "*<#{project_url}|#{project_title}>* can't be certified, and it can't be resubmitted for review.", markdown: true
+
+  section "*Feedback:* #{feedback}", markdown: true if feedback.present?
 else
   header ":pencil: Your build needs changes"
 

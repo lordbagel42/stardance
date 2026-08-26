@@ -5,10 +5,12 @@
     form with that verdict — no JS needed, and no form nesting across cards.
 
     Verdicts wired to the real endpoints:
-      • Design (funding): approved / approved_without_grant / returned
-      • Build  (ship):    approved / returned
-    "perm reject" has no backend verdict, so it's rendered disabled and flagged for
-    a product decision (see the report). State mirrors _feedback:
+      • Design (funding): approved / approved_without_grant / returned / rejected
+      • Build  (ship):    approved / returned / rejected
+    "perm reject" is terminal (the project can never be submitted again) and is
+    gated behind :hardware_permanent_rejections — the shared _perm_reject_button
+    partial renders it disabled with a tooltip until that flag is on, and the
+    reviewer endpoints refuse the verdict too. State mirrors _feedback:
       • no active review  -> calm idle message
       • not the claimant  -> Claim this review button
       • claimant          -> the verdict controls %>
@@ -61,11 +63,8 @@
               class="hardware-cockpit__action hardware-cockpit__action--return">
         return <kbd class="hardware-cockpit__kbd">ctrl+e</kbd>
       </button>
-      <button type="button" disabled
-              title="Permanent rejection isn't wired yet — use return for changes."
-              class="hardware-cockpit__action hardware-cockpit__action--reject">
-        perm reject
-      </button>
+      <%= render "admin/certification/hardware_reviews/new_gui/perm_reject_button",
+            name: "certification_funding_request[verdict]" %>
     </div>
 
   <% elsif review_type == :ship %>
@@ -80,11 +79,8 @@
               class="hardware-cockpit__action hardware-cockpit__action--return">
         return <kbd class="hardware-cockpit__kbd">ctrl+e</kbd>
       </button>
-      <button type="button" disabled
-              title="Permanent rejection isn't wired yet — use return for changes."
-              class="hardware-cockpit__action hardware-cockpit__action--reject">
-        perm reject
-      </button>
+      <%= render "admin/certification/hardware_reviews/new_gui/perm_reject_button",
+            name: "certification_ship[status]" %>
     </div>
   <% end %>
 </section>

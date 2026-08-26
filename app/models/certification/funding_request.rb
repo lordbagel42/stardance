@@ -117,7 +117,10 @@ module Certification
       approved: 1,
       returned: 2,
       misfiled: 3,
-      withdrawn: 4
+      withdrawn: 4,
+      # Permanent rejection (terminal): no grant, no advance, and the project can
+      # never be submitted again. Gated behind :hardware_permanent_rejections.
+      rejected: 5
     }, default: :pending
 
     # HCB org the hardware grants are issued from. Spend controls (approved and
@@ -145,7 +148,7 @@ module Certification
     REVIEW_BOUNTY = 1
 
     # The three choices a reviewer picks from on the design review form.
-    VERDICTS = %w[approved approved_without_grant returned].freeze
+    VERDICTS = %w[approved approved_without_grant returned rejected].freeze
 
     before_validation :default_kit_request_fields, on: :create, if: :kit_mission?
     # Zeroed here rather than in the writer so it wins regardless of the order
@@ -358,6 +361,7 @@ module Certification
         project_title: project.title,
         project_url: routes.project_url(project, **url_opts),
         approved: approved?,
+        rejected: rejected?,
         awards_kit: awards_design_kit?,
         kit_mission: kit_mission?,
         issues_grant: issues_grant?,
@@ -506,6 +510,10 @@ module Certification
           project.update!(hardware_stage: "build")
         when :returned
           # owner is notified; no project change
+        when :rejected
+          # Terminal: no grant, no advance. The project is now permanently
+          # rejected (Project#hardware_permanently_rejected?), which blocks any
+          # future submission; the owner is notified.
         end
       end
     end
