@@ -26,7 +26,7 @@
     justify-content: space-between;
     gap: var(--space-m);
     padding: var(--space-xs) var(--space-m);
-    background: var(--color-set-3-bg);
+    background: var(--color-set-2-bg);
     border-radius: var(--profile-radius);
   }
 
@@ -36,7 +36,7 @@
     background: var(--color-amber-500);
     color: var(--color-set-1-bg);
 
-    .hardware-cockpit__exit,
+    // The exit pill keeps its own dark fill (legible on amber); darken the rest.
     .hardware-cockpit__topbar-divider,
     .hardware-cockpit__sc-label,
     .hardware-cockpit__sc,
@@ -78,17 +78,34 @@
   }
 
   &__exit {
+    flex: none;
+    padding: var(--space-xxs) var(--space-m);
     font-weight: 700;
     color: var(--color-brand-mint);
     text-decoration: none;
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
 
     &:hover {
-      text-decoration: underline;
+      border-color: var(--color-brand-mint);
     }
   }
 
   &__claim-timer {
     font-variant-numeric: tabular-nums;
+  }
+
+  // Spelled out by the controller only while a verdict is armed (confirm + cancel).
+  &__esc-hint {
+    flex: none;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    color: var(--color-brand-yellow);
+
+    &[hidden] {
+      display: none;
+    }
   }
 
   // Contextual shortcut bar — global set always visible; the focused region's
@@ -280,6 +297,21 @@
     color: var(--color-space-text);
   }
 
+  // "Sort" label + the segmented control, so it reads clearly as sort order.
+  &__sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__sort-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-space-text-muted);
+  }
+
   // Segmented sort control — a subtle rounded track holding two segments. Only the
   // active segment is filled; the inactive one is plain text on the track.
   &__config-group {
@@ -341,6 +373,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-s);
+    // ctrl+↑/↓ aligns the current devlog to the top of the column; keep a little
+    // breathing room so it isn't flush against the edge.
+    scroll-margin-top: var(--space-xs);
   }
 
   // The current devlog is marked ONLY while the devlogs column itself is selected,
@@ -363,21 +398,28 @@
     color: var(--color-brand-mint);
   }
 
+  // Full-width carousel — each timelapse fills the devlog card; scroll/snap
+  // horizontally to page through the rest.
   &__timelapse-strip {
     display: flex;
-    gap: var(--space-xs);
+    gap: var(--space-s);
     margin: 0;
     padding: 0 0 var(--space-xxs);
     list-style: none;
     overflow-x: auto;
+    scroll-snap-type: x mandatory;
+
+    > li {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+    }
   }
 
   &__timelapse {
     position: relative;
     display: block;
-    flex: 0 0 auto;
-    width: 6rem;
-    height: 3.6rem;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
     background: var(--color-space-surface-faint);
     border: 1px solid var(--color-space-border);
@@ -900,13 +942,24 @@
       animation: hardware-cockpit-pulse 0.9s ease-in-out infinite;
     }
 
+    // The hotkey chip rides a vivid button fill, so it needs a dark, readable
+    // treatment rather than the light chip used elsewhere.
+    .hardware-cockpit__kbd {
+      color: var(--color-brand-off-white);
+      background: rgba(0, 0, 0, 0.24);
+      border-color: rgba(0, 0, 0, 0.24);
+    }
+
     &--approve {
       background: var(--color-green-400);
       color: var(--color-brand-off-white);
     }
 
+    // Secondary "approve, no grant" — a calm green ghost so it reads clearly as
+    // the lesser action beside the vivid approve, without a bare-outline look.
     &--approve-alt {
       color: var(--color-green-300);
+      background: var(--color-overlay-light-soft);
       border-color: var(--color-green-400);
     }
 
@@ -989,39 +1042,69 @@
     border-radius: 4px;
   }
 
-  // ── Placeholders ────────────────────────────────────────────────────────────
-  &__placeholder {
+  // ── Reviewer notes ledger ────────────────────────────────────────────────────
+  &__note-form {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-xxxs);
-    min-height: 3rem;
-    padding: var(--space-s);
-    text-align: center;
-    color: var(--color-space-text-muted);
-    background: var(--color-space-surface-faint);
-    border: 1px dashed var(--color-space-border);
-    border-radius: var(--profile-radius);
-
-    // The remaining placeholder variants are used only by the notes card, which
-    // is still a skeleton pending its backend.
-    &--field {
-      min-height: 2.5rem;
-    }
-
-    &--ledger {
-      min-height: 14rem;
-    }
+    gap: var(--space-xxs);
   }
 
-  &__placeholder-label {
-    font-weight: 600;
-    color: var(--color-space-text);
-  }
-
-  &__placeholder-note {
+  &__note-add {
+    align-self: flex-end;
+    padding: var(--space-xxxs) var(--space-m);
+    font-family: inherit;
     font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-mint);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+
+    &:hover {
+      filter: brightness(1.08);
+    }
+  }
+
+  &__note-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: var(--space-xs) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__note {
+    padding: var(--space-xs);
+    background: var(--color-space-surface-faint);
+    border-radius: var(--profile-radius);
+  }
+
+  &__note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+    margin: 0 0 var(--space-xxxs);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+  }
+
+  &__note-author {
+    font-weight: 700;
+    color: var(--color-brand-blue);
+  }
+
+  &__note-time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__note-body {
+    margin: 0;
+    font-size: var(--font-size-s);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--color-space-text);
   }
 
   // ── Image / timelapse lightbox (keyboard shortcuts) ──────────────────────────

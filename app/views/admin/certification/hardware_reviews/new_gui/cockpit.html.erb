@@ -45,6 +45,9 @@
               params: { redirect_to_hardware: @project.id },
               class: "hardware-cockpit__claim-cta", form_class: "hardware-cockpit__topbar-form" %>
       <% end %>
+      <%# Revealed by the cockpit controller while a verdict is armed — spells out
+          the confirm key + esc-to-cancel. %>
+      <span class="hardware-cockpit__esc-hint" data-certification--hardware-cockpit-target="escHint" hidden></span>
     </div>
 
     <div class="hardware-cockpit__shortcuts" aria-label="Keyboard shortcuts">
@@ -67,7 +70,7 @@
       <div class="hardware-cockpit__sc-group" data-cockpit-group="actions" hidden>
         <span class="hardware-cockpit__sc"><kbd>ctrl+p</kbd> approve</span>
         <span class="hardware-cockpit__sc"><kbd>ctrl+e</kbd> return</span>
-        <span class="hardware-cockpit__sc"><kbd>shift+XX</kbd> reject</span>
+        <span class="hardware-cockpit__sc"><kbd>esc</kbd> cancel</span>
       </div>
     </div>
   </header>

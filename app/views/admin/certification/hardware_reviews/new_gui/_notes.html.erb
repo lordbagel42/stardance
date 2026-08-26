@@ -1,8 +1,34 @@
-<%# Cockpit notes-ledger card. STATIC SKELETON — to be wired to the internal,
-    timestamped reviewer notes ledger (add note + list). %>
-<% ph = "admin/certification/hardware_reviews/new_gui/placeholder" %>
-<section class="hardware-cockpit__card hardware-cockpit__card--notes" aria-label="Notes"
+<%# Cockpit notes-ledger card — the reviewer-only internal notes ledger
+    (Certification::ReviewNote, from upstream), newest first, shared across the
+    project's funding and ship reviews and never shown to the builder. The
+    add-note form posts to the shared create endpoint and lands back here. %>
+<section class="hardware-cockpit__card hardware-cockpit__card--notes" aria-label="Reviewer notes"
          tabindex="0" data-cockpit-region="actions">
-  <%= render ph, label: "add note", variant: "field" %>
-  <%= render ph, label: "notes ledger", variant: "ledger" %>
+  <header class="hardware-cockpit__panel-head">
+    <span class="hardware-cockpit__panel-title">reviewer notes</span>
+  </header>
+
+  <%= form_with url: admin_certification_project_review_notes_path(@project),
+        scope: :certification_review_note, method: :post, class: "hardware-cockpit__note-form" do |form| %>
+    <%= form.text_area :body, rows: 2, maxlength: 5_000, class: "hardware-cockpit__textarea",
+          placeholder: "Note for the next reviewer (never shown to the builder)" %>
+    <%= form.submit "Add note", class: "hardware-cockpit__note-add" %>
+  <% end %>
+
+  <% if @review_notes.present? %>
+    <ul class="hardware-cockpit__note-list">
+      <% @review_notes.each do |note| %>
+        <li class="hardware-cockpit__note">
+          <p class="hardware-cockpit__note-meta">
+            <span class="hardware-cockpit__note-author"><%= note.author&.display_name || "Unknown reviewer" %></span>
+            <time class="hardware-cockpit__note-time" datetime="<%= note.created_at.iso8601 %>"
+                  title="<%= l(note.created_at, format: :long) %>">· <%= note.created_at.strftime("%Y/%m/%d %H:%M") %></time>
+          </p>
+          <p class="hardware-cockpit__note-body"><%= note.body %></p>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="hardware-cockpit__idle">No reviewer notes yet.</p>
+  <% end %>
 </section>

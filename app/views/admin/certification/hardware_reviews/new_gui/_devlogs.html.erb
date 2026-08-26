@@ -8,9 +8,14 @@
          tabindex="0" data-cockpit-region="devlogs">
   <div class="hardware-cockpit__config-bar">
     <span class="hardware-cockpit__config-count"><%= pluralize(devlogs&.size || 0, "devlog") %></span>
-    <div class="hardware-cockpit__config-group" role="group" aria-label="Sort order">
-      <button type="button" class="hardware-cockpit__config-btn is-active" aria-pressed="true">Newest</button>
-      <button type="button" class="hardware-cockpit__config-btn" aria-pressed="false">Oldest</button>
+    <div class="hardware-cockpit__sort" role="group" aria-label="Sort devlogs">
+      <span class="hardware-cockpit__sort-label">Sort</span>
+      <div class="hardware-cockpit__config-group">
+        <button type="button" class="hardware-cockpit__config-btn is-active" aria-pressed="true"
+                data-action="certification--hardware-cockpit#sortDevlogs" data-order="newest">Newest</button>
+        <button type="button" class="hardware-cockpit__config-btn" aria-pressed="false"
+                data-action="certification--hardware-cockpit#sortDevlogs" data-order="oldest">Oldest</button>
+      </div>
     </div>
   </div>
 
@@ -18,11 +23,11 @@
     <% if devlogs.present? %>
       <% devlogs.each do |devlog| %>
         <% timelapses = @devlog_timelapses&.dig(devlog.id) %>
-        <article class="hardware-cockpit__devlog">
+        <article class="hardware-cockpit__devlog" data-time="<%= devlog.created_at.to_i %>">
           <header class="hardware-cockpit__devlog-head">
             <span class="hardware-cockpit__devlog-date">
               <time datetime="<%= devlog.created_at.iso8601 %>" title="<%= l(devlog.created_at, format: :long) %>">
-                <%= time_ago_in_words(devlog.created_at) %> ago
+                <%= time_ago_in_words(devlog.created_at) %> ago · <%= devlog.created_at.strftime("%Y/%m/%d %H:%M") %>
               </time>
             </span>
             <% if devlog.duration_seconds.to_i.positive? %>

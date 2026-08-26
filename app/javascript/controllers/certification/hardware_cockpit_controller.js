@@ -7,7 +7,7 @@ import { Controller } from "@hotwired/stimulus";
 //   3. Keyboard shortcuts — devlog navigation, image/timelapse lightbox, and
 //      arm-then-confirm verdict submission.
 export default class extends Controller {
-  static targets = ["countdown"];
+  static targets = ["countdown", "escHint"];
   static values = { expiresAt: String, serverNow: String };
 
   connect() {
@@ -80,6 +80,16 @@ export default class extends Controller {
       return;
     }
 
+    // Escape cancels an armed verdict, otherwise unfocuses the current card/field.
+    if (event.key === "Escape") {
+      if (this.armed) return this.consume(event, () => this.clearArm());
+      const focused = document.activeElement;
+      if (focused && focused !== document.body && this.element.contains(focused)) {
+        return this.consume(event, () => focused.blur());
+      }
+      return;
+    }
+
     // Ctrl combos are safe even while typing — they never insert text.
     if (ctrl && event.code === "Space") return this.consume(event, () => this.focusDevlogs());
     if (ctrl && event.key === "Enter") return this.consume(event, () => this.focusFeedback());
@@ -94,7 +104,6 @@ export default class extends Controller {
     if (event.shiftKey && event.code === "KeyD") return this.consume(event, () => this.scrollToDevlogPart("body"));
     if (event.shiftKey && event.code === "KeyI") return this.consume(event, () => this.scrollToDevlogPart("gallery"));
     if (event.shiftKey && event.code === "KeyT") return this.consume(event, () => this.openTimelapse());
-    if (event.shiftKey && event.code === "KeyX") return this.consume(event, () => this.armVerdict("reject"));
     const image = { Digit1: 0, Digit2: 1, Digit3: 2 }[event.code];
     if (event.shiftKey && image !== undefined) return this.consume(event, () => this.openImage(image));
   }
@@ -128,7 +137,30 @@ export default class extends Controller {
     if (!els.length) return;
     this.currentDevlog = Math.max(0, Math.min(index, els.length - 1));
     els.forEach((el, i) => el.classList.toggle("is-current", i === this.currentDevlog));
-    els[this.currentDevlog].scrollIntoView({ block: "nearest", behavior: "smooth" });
+    // Align the current devlog to the top of the column so it doesn't ride the
+    // bottom edge once the list has scrolled (scroll-margin-top gives it breathing
+    // room below the config bar).
+    els[this.currentDevlog].scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
+  // Reorder the devlog cards by timestamp (newest/oldest), driven by the config
+  // bar's sort segments.
+  sortDevlogs(event) {
+    const order = event.currentTarget.dataset.order;
+    const list = this.element.querySelector(".hardware-cockpit__devlogs");
+    if (!list) return;
+    this.devlogEls()
+      .sort((a, b) => {
+        const at = Number(a.dataset.time || 0), bt = Number(b.dataset.time || 0);
+        return order === "oldest" ? at - bt : bt - at;
+      })
+      .forEach((el) => list.appendChild(el));
+    this.element.querySelectorAll(".hardware-cockpit__config-btn").forEach((b) => {
+      const on = b === event.currentTarget;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    this.setDevlog(0);
   }
 
   currentDevlogEl() {
@@ -170,6 +202,7 @@ export default class extends Controller {
     this.clearArm();
     this.armed = kind;
     button.classList.add("is-armed");
+    this.showEscHint(kind);
     this.armTimer = setTimeout(() => this.clearArm(), 4000);
   }
 
@@ -177,6 +210,19 @@ export default class extends Controller {
     if (this.armTimer) clearTimeout(this.armTimer);
     if (this.armed) this.verdictButton(this.armed)?.classList.remove("is-armed");
     this.armed = null;
+    this.hideEscHint();
+  }
+
+  // While a verdict is armed, spell out the confirm/cancel keys in the top bar.
+  showEscHint(kind) {
+    if (!this.hasEscHintTarget) return;
+    const key = kind === "approve" ? "ctrl+p" : kind === "return" ? "ctrl+e" : "the shortcut";
+    this.escHintTarget.textContent = `press ${key} again to ${kind} · esc to cancel`;
+    this.escHintTarget.hidden = false;
+  }
+
+  hideEscHint() {
+    if (this.hasEscHintTarget) this.escHintTarget.hidden = true;
   }
 
   // ── Lightbox for devlog images + timelapses ──────────────────────────────
