@@ -75,6 +75,16 @@ export default class extends Controller {
     // The lightbox is modal: it captures escape + arrows and blocks the rest.
     if (this.lightbox) {
       if (event.key === "Escape") return this.consume(event, () => this.closeLightbox());
+      // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
+      if (this.lbVideo) {
+        if (event.code === "KeyJ") return this.consume(event, () => this.reversePlay());
+        if (event.code === "KeyK") return this.consume(event, () => this.pausePlayer());
+        if (event.code === "KeyL") return this.consume(event, () => this.forwardPlay());
+        if (event.key === "ArrowLeft") return this.consume(event, () => this.stepVideo(event.shiftKey ? -10 : -1));
+        if (event.key === "ArrowRight") return this.consume(event, () => this.stepVideo(event.shiftKey ? 10 : 1));
+        return;
+      }
+      // Images → prev/next.
       if (event.key === "ArrowLeft") return this.consume(event, () => this.stepLightbox(-1));
       if (event.key === "ArrowRight") return this.consume(event, () => this.stepLightbox(1));
       return;
@@ -273,14 +283,19 @@ export default class extends Controller {
 
   renderLightbox() {
     const item = this.lbItems[this.lbIndex];
+    this.stopReverse();
     this.lbStage.innerHTML = "";
     if (item.type === "video") {
       const video = document.createElement("video");
-      Object.assign(video, { src: item.src, controls: true, autoplay: true });
+      Object.assign(video, { src: item.src, controls: true, autoplay: true, playsInline: true });
       video.className = "hardware-cockpit__lightbox-media";
       this.lbStage.appendChild(video);
       this.lbVideo = video;
-      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length} · ←/→ scrub · esc to close`;
+      this.reverseSpeed = 1;
+      [ "play", "pause", "ratechange" ].forEach((e) =>
+        video.addEventListener(e, () => this.updatePlayerCaption())
+      );
+      this.updatePlayerCaption();
     } else {
       const img = document.createElement("img");
       img.src = item.src;
@@ -293,18 +308,84 @@ export default class extends Controller {
     }
   }
 
-  stepLightbox(direction) {
-    const item = this.lbItems[this.lbIndex];
-    if (item.type === "video" && this.lbVideo) {
-      this.lbVideo.currentTime = Math.max(0, this.lbVideo.currentTime + direction * 5);
-      return;
+  // ── Premiere-style JKL video transport ───────────────────────────────────
+  // HTML5 video can't play backwards, so J is emulated with a timer that walks
+  // currentTime back; repeated J/L step through speed ladders.
+  forwardPlay() {
+    if (!this.lbVideo) return;
+    this.stopReverse();
+    const rates = [ 1, 1.5, 2, 4, 8 ];
+    if (this.lbVideo.paused) {
+      this.lbVideo.playbackRate = 1;
+      this.lbVideo.play();
+    } else {
+      const i = rates.indexOf(this.lbVideo.playbackRate);
+      this.lbVideo.playbackRate = rates[Math.min((i < 0 ? 0 : i) + 1, rates.length - 1)];
     }
+    this.updatePlayerCaption();
+  }
+
+  reversePlay() {
+    if (!this.lbVideo) return;
+    this.lbVideo.pause();
+    this.reverseSpeed = this.reverseTimer ? Math.min(this.reverseSpeed * 2, 8) : 1;
+    this.startReverse();
+    this.updatePlayerCaption();
+  }
+
+  startReverse() {
+    this.stopReverse();
+    this.reverseTimer = setInterval(() => {
+      if (!this.lbVideo) return this.stopReverse();
+      const t = this.lbVideo.currentTime - this.reverseSpeed * 0.066;
+      if (t <= 0) {
+        this.lbVideo.currentTime = 0;
+        this.stopReverse();
+        this.updatePlayerCaption();
+      } else {
+        this.lbVideo.currentTime = t;
+      }
+    }, 66);
+  }
+
+  stopReverse() {
+    if (this.reverseTimer) clearInterval(this.reverseTimer);
+    this.reverseTimer = null;
+  }
+
+  pausePlayer() {
+    this.stopReverse();
+    this.lbVideo?.pause();
+    this.updatePlayerCaption();
+  }
+
+  stepVideo(seconds) {
+    if (!this.lbVideo) return;
+    this.stopReverse();
+    this.lbVideo.pause();
+    const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
+    this.lbVideo.currentTime = Math.max(0, Math.min(max, this.lbVideo.currentTime + seconds));
+    this.updatePlayerCaption();
+  }
+
+  updatePlayerCaption() {
+    if (!this.lbVideo || !this.lbCaption) return;
+    let mode;
+    if (this.reverseTimer) mode = `◀ ${this.reverseSpeed}×`;
+    else if (this.lbVideo.paused) mode = "❚❚ paused";
+    else mode = `▶ ${this.lbVideo.playbackRate}×`;
+    this.lbCaption.textContent =
+      `${this.lbIndex + 1} / ${this.lbItems.length} · ${mode} · J/K/L · ←/→ scrub (shift = 10s) · esc`;
+  }
+
+  stepLightbox(direction) {
     const count = this.lbItems.length;
     this.lbIndex = (this.lbIndex + direction + count) % count;
     this.renderLightbox();
   }
 
   closeLightbox() {
+    this.stopReverse();
     this.lightbox?.remove();
     this.lightbox = null;
     this.lbVideo = null;
