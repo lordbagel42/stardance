@@ -85,7 +85,9 @@ module GitHost
 
       full_url = "#{api_base}/repos/#{owner}/#{repo}/git/trees/HEAD?recursive=1"
       tree = http_get(full_url, headers: auth_headers)
-      return nil unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
+      # API unavailable (rate limit / error / truncated) → fall back to a blobless
+      # clone, which uses the git protocol and isn't API-rate-limited.
+      return GitCli.new(repo_url).fetch_filenames unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
       return GitCli.new(repo_url).fetch_filenames if tree["truncated"]
 
       tree["tree"].filter_map { |node| node["path"] if node["type"] == "blob" }
@@ -99,7 +101,9 @@ module GitHost
 
       full_url = "#{api_base}/repos/#{owner}/#{repo}/git/trees/HEAD?recursive=1"
       tree = http_get(full_url, headers: auth_headers)
-      return nil unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
+      # API unavailable (rate limit / error / truncated) → fall back to a blobless
+      # clone (git protocol, not API-rate-limited). Clone entries have no size.
+      return GitCli.new(repo_url).fetch_file_tree unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
       return GitCli.new(repo_url).fetch_file_tree if tree["truncated"]
 
       tree["tree"].filter_map do |node|
