@@ -12,7 +12,7 @@ class RepoFileKind
   GERBER   = %w[gbr ger gbl gtl gto gts gbs gko gm1 gpi drl xln nc].freeze
   FIRMWARE = %w[c cpp cc h hpp ino py rs go v sv vhd s asm].freeze
   CODE     = %w[js ts jsx tsx rb java kt cs swift php lua sh bash zsh].freeze
-  DATA     = %w[json yml yaml toml ini cfg conf xml csv tsv env properties].freeze
+  DATA     = %w[json yml yaml toml ini cfg conf xml env properties].freeze
   DOC_TEXT = %w[txt rst adoc org log].freeze
   IMAGE    = %w[png jpg jpeg gif svg webp bmp ico avif].freeze
 
@@ -33,6 +33,7 @@ class RepoFileKind
     key, label, preview =
       case ext
       when "md", "markdown" then [ "doc", "DOC", :markdown ]
+      when "csv", "tsv"     then [ "data", "CSV", :csv ]
       when *IMAGE           then [ "img", "IMG", :image ]
       when *CAD             then [ "cad", "CAD", :none ]
       when *KICAD           then [ "kicad", "KICAD", :none ]

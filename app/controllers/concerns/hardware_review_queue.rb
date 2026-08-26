@@ -535,11 +535,27 @@ module HardwareReviewQueue
     result = ProjectReadmeFetcher.fetch(raw_url)
     return { type: :error, message: result.error } if result.error
 
-    if kind.preview == :markdown
-      { type: :markdown, html: readme_html_from(result, raw_url) }
-    else
-      { type: :code, body: result.markdown }
+    case kind.preview
+    when :markdown then { type: :markdown, html: readme_html_from(result, raw_url) }
+    when :csv then { type: :csv, rows: parse_delimited(result.markdown) }
+    else { type: :code, body: result.markdown }
     end
+  end
+
+  MAX_PREVIEW_ROWS = 200
+  MAX_PREVIEW_COLS = 30
+
+  # Parse CSV/TSV text into a capped grid for the preview table (delimiter guessed
+  # from the header row). Never raises — a malformed file yields an empty grid.
+  def parse_delimited(text)
+    require "csv"
+    header = text.to_s.lines.first.to_s
+    sep = header.count("\t") > header.count(",") ? "\t" : ","
+    CSV.parse(text.to_s, col_sep: sep, liberal_parsing: true)
+       .first(MAX_PREVIEW_ROWS)
+       .map { |row| row.first(MAX_PREVIEW_COLS) }
+  rescue CSV::MalformedCSVError, ArgumentError
+    []
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class

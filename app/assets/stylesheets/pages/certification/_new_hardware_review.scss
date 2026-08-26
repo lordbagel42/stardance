@@ -812,9 +812,45 @@
   }
 
   // Preview pane — the rendered README by default, or the selected file.
+  // Preview pane — a persistent pop-out bar over a swappable body (README default
+  // or the selected file).
   &__preview {
     flex: 1;
     min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__preview-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-xxs);
+  }
+
+  &__preview-popout {
+    appearance: none;
+    padding: 0.05rem var(--space-s);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-space-text-muted);
+    background: transparent;
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-space-text);
+      border-color: var(--color-brand-mint);
+    }
+  }
+
+  &__preview-body {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
     overflow-wrap: anywhere;
 
     // README / markdown images load by default; keep them inside the column.
@@ -823,6 +859,129 @@
       height: auto;
       border-radius: var(--profile-radius);
     }
+  }
+
+  // Collapsible directory tree in the rail.
+  &__tree {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // Indent nested levels a touch.
+    .hardware-cockpit__tree {
+      margin-left: var(--space-s);
+      border-left: 1px solid var(--color-space-border);
+      padding-left: var(--space-xxs);
+    }
+  }
+
+  &__tree-dir {
+    &[open] > .hardware-cockpit__tree-folder .hardware-cockpit__tree-caret {
+      transform: rotate(90deg);
+    }
+  }
+
+  &__tree-folder {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: 0.15rem var(--space-xxs);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-space-text);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+
+    &:hover {
+      background: var(--color-overlay-light-soft);
+      border-radius: 6px;
+    }
+  }
+
+  &__tree-caret {
+    flex: none;
+    font-size: 0.7rem;
+    color: var(--color-space-text-muted);
+    transition: transform 0.12s ease;
+  }
+
+  // CSV preview — a compact scrollable table.
+  &__csv-wrap {
+    overflow: auto;
+    max-height: 26rem;
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+  }
+
+  &__csv {
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+      padding: var(--space-xxs) var(--space-xs);
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--color-space-border);
+      border-right: 1px solid var(--color-space-border);
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      font-weight: 700;
+      color: var(--color-set-1-bg);
+      background: var(--color-brand-mint);
+    }
+
+    tr:nth-child(even) td {
+      background: var(--color-space-surface-faint);
+    }
+  }
+
+  // Pop-out modal — the current preview blown up over the whole viewport.
+  &__preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl);
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  &__preview-modal-panel {
+    position: relative;
+    width: min(92vw, 1100px);
+    max-height: 88vh;
+    overflow: auto;
+    padding: var(--space-l);
+    color: var(--color-space-text);
+    background: var(--color-set-2-bg);
+    border-radius: var(--profile-radius);
+
+    img { max-width: 100%; height: auto; }
+    table { border-collapse: collapse; }
+  }
+
+  &__preview-modal-close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    color: var(--color-space-text);
+    background: var(--color-set-1-bg);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
   }
 
   &__preview-head {

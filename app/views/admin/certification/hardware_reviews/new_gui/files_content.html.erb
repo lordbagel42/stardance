@@ -1,9 +1,10 @@
-<%# Cockpit file-browser payload: a categorized file-tree rail beside a preview
-    pane. The rail lists every repo file with a type badge + size; clicking one
-    asks the file_preview endpoint for that file and hardware-file-browser swaps
-    it into the preview pane, which defaults to the rendered README. Reads
-    @file_tree / @readme_html / @readme_error (set by #files). @file_tree is nil on
-    a fetch failure, [] for an empty repo, or an array of { path:, size: }. %>
+<%# Cockpit file-browser payload: a collapsible file-tree rail beside a preview
+    pane. Clicking a file asks the file_preview endpoint for it and
+    hardware-file-browser swaps it into the preview body (which defaults to the
+    rendered README); the pop-out button blows the current preview up into a
+    large modal. Reads @file_tree / @readme_html / @readme_error (set by #files).
+    @file_tree is nil on a fetch failure, [] for an empty repo, or an array of
+    { path:, size: }. %>
 <nav class="hardware-cockpit__files-rail" aria-label="Repository files">
   <% if @file_tree.nil? %>
     <p class="hardware-cockpit__files-note">Couldn't load the file list.</p>
@@ -15,31 +16,23 @@
       <button type="button" class="hardware-cockpit__files-readme"
               data-action="certification--hardware-file-browser#showReadme">README</button>
     </div>
-    <ul class="hardware-cockpit__file-list">
-      <% @file_tree.sort_by { |node| node[:path] }.each do |node| %>
-        <% kind = RepoFileKind.for(node[:path]) %>
-        <li>
-          <button type="button" class="hardware-cockpit__file"
-                  data-action="certification--hardware-file-browser#select"
-                  data-path="<%= node[:path] %>" title="<%= node[:path] %>">
-            <span class="hardware-cockpit__file-badge hardware-cockpit__file-badge--<%= kind.key %>"><%= kind.label %></span>
-            <span class="hardware-cockpit__file-name"><%= node[:path] %></span>
-            <% if node[:size] %>
-              <span class="hardware-cockpit__file-size"><%= number_to_human_size(node[:size]) %></span>
-            <% end %>
-          </button>
-        </li>
-      <% end %>
-    </ul>
+    <%= render "admin/certification/hardware_reviews/new_gui/file_tree",
+          nodes: RepoFileTree.build(@file_tree) %>
   <% end %>
 </nav>
 
 <div class="hardware-cockpit__preview">
-  <% if @readme_html.present? %>
-    <div class="markdown-content"><%= @readme_html.html_safe %></div>
-  <% elsif @readme_error.present? %>
-    <p class="hardware-cockpit__files-note"><%= @readme_error %></p>
-  <% else %>
-    <p class="hardware-cockpit__files-note">No README to show — pick a file to preview it.</p>
-  <% end %>
+  <div class="hardware-cockpit__preview-bar">
+    <button type="button" class="hardware-cockpit__preview-popout"
+            data-action="certification--hardware-file-browser#popOut" title="Open in a large modal">⤢ Pop out</button>
+  </div>
+  <div class="hardware-cockpit__preview-body">
+    <% if @readme_html.present? %>
+      <div class="markdown-content"><%= @readme_html.html_safe %></div>
+    <% elsif @readme_error.present? %>
+      <p class="hardware-cockpit__files-note"><%= @readme_error %></p>
+    <% else %>
+      <p class="hardware-cockpit__files-note">No README to show — pick a file to preview it.</p>
+    <% end %>
+  </div>
 </div>

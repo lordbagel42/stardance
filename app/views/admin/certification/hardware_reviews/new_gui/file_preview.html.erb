@@ -21,6 +21,27 @@
 <% when :code %>
   <pre class="hardware-cockpit__code"><code><%= @preview[:body] %></code></pre>
 
+<% when :csv %>
+  <% if @preview[:rows].present? %>
+    <div class="hardware-cockpit__csv-wrap">
+      <table class="hardware-cockpit__csv">
+        <% @preview[:rows].each_with_index do |row, i| %>
+          <tr>
+            <% row.each do |cell| %>
+              <% if i.zero? %>
+                <th scope="col"><%= cell %></th>
+              <% else %>
+                <td><%= cell %></td>
+              <% end %>
+            <% end %>
+          </tr>
+        <% end %>
+      </table>
+    </div>
+  <% else %>
+    <p class="hardware-cockpit__files-note">Couldn't read this file as a table.</p>
+  <% end %>
+
 <% when :image %>
   <div class="hardware-cockpit__preview-image">
     <%= image_tag @preview[:src], alt: @preview_path, loading: "lazy", referrerpolicy: "no-referrer" %>

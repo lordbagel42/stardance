@@ -1,0 +1,32 @@
+<%# Recursive file-tree node list for the cockpit file browser. `nodes` is the
+    ordered tree from RepoFileTree.build (dirs first). Folders are native
+    collapsible <details>; files are the same select buttons the flat list used,
+    so clicking one still swaps the preview pane. %>
+<ul class="hardware-cockpit__tree">
+  <% nodes.each do |node| %>
+    <% if node[:type] == :dir %>
+      <li>
+        <details class="hardware-cockpit__tree-dir">
+          <summary class="hardware-cockpit__tree-folder">
+            <span class="hardware-cockpit__tree-caret" aria-hidden="true">▸</span>
+            <span class="hardware-cockpit__tree-folder-name"><%= node[:name] %></span>
+          </summary>
+          <%= render "admin/certification/hardware_reviews/new_gui/file_tree", nodes: node[:children] %>
+        </details>
+      </li>
+    <% else %>
+      <% kind = RepoFileKind.for(node[:path]) %>
+      <li>
+        <button type="button" class="hardware-cockpit__file"
+                data-action="certification--hardware-file-browser#select"
+                data-path="<%= node[:path] %>" title="<%= node[:path] %>">
+          <span class="hardware-cockpit__file-badge hardware-cockpit__file-badge--<%= kind.key %>"><%= kind.label %></span>
+          <span class="hardware-cockpit__file-name"><%= node[:name] %></span>
+          <% if node[:size] %>
+            <span class="hardware-cockpit__file-size"><%= number_to_human_size(node[:size]) %></span>
+          <% end %>
+        </button>
+      </li>
+    <% end %>
+  <% end %>
+</ul>

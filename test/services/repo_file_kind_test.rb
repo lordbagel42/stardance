@@ -35,6 +35,12 @@ class RepoFileKindTest < ActiveSupport::TestCase
     assert_equal "FW", kind("firmware/main.c").label
   end
 
+  test "csv and tsv preview as a table" do
+    assert_equal :csv, kind("data/readings.csv").preview
+    assert_equal "CSV", kind("data/readings.csv").label
+    assert_equal :csv, kind("log.tsv").preview
+  end
+
   test "images preview as image" do
     assert_equal :image, kind("docs/wiring.png").preview
     assert_equal "IMG", kind("photo.JPG").label
