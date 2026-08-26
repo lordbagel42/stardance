@@ -1,0 +1,10 @@
+<%# Labeled empty box used throughout the :new_hardware_gui cockpit skeleton
+    until real data and controls are wired in. `label` names the panel; the
+    optional `note` describes what will eventually live here. `variant` tweaks
+    the box's proportions (e.g. "tall", "wide"). %>
+<div class="hardware-cockpit__placeholder <%= "hardware-cockpit__placeholder--#{local_assigns[:variant]}" if local_assigns[:variant].present? %>">
+  <span class="hardware-cockpit__placeholder-label"><%= label %></span>
+  <% if local_assigns[:note].present? %>
+    <span class="hardware-cockpit__placeholder-note"><%= note %></span>
+  <% end %>
+</div>

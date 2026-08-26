@@ -1,0 +1,1119 @@
+// :new_hardware_gui reviewer cockpit — STATIC SKELETON.
+//
+// Full-screen 3-column redesign of the hardware review page. Takes over the
+// whole viewport (the controller hides the sidebar + footer). Every inner
+// panel is a dashed placeholder until real data / controls land. Surfaces
+// follow docs/branding.md: page = set 1, lifted chrome (top bar) =
+// set 3, content cards = set 2. Reserved orange dashed marker is used only on
+// the admin-only "reverse" control (branding §1.5).
+
+.hardware-cockpit {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  padding: var(--space-s);
+  background: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+
+  // ── Top bar ──────────────────────────────────────────────────────────────
+  &__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding: var(--space-xs) var(--space-m);
+    background: var(--color-set-3-bg);
+    border-radius: var(--profile-radius);
+  }
+
+  // Unclaimed: the whole bar goes bright amber (the "pending / needs action" tone)
+  // with dark ink, so it's impossible to miss that the review isn't claimed yet.
+  &__topbar--unclaimed {
+    background: var(--color-amber-500);
+    color: var(--color-set-1-bg);
+
+    .hardware-cockpit__exit,
+    .hardware-cockpit__topbar-divider,
+    .hardware-cockpit__sc-label,
+    .hardware-cockpit__sc,
+    .hardware-cockpit__sc kbd,
+    kbd {
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  &__claim-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    font-weight: 700;
+    color: var(--color-set-1-bg);
+  }
+
+  &__claim-warning-icon {
+    font-size: var(--font-size-m);
+  }
+
+  // button_to wraps each top-bar action in a form; collapse it so the button is
+  // the flex item.
+  &__topbar-form {
+    display: contents;
+  }
+
+  &__topbar-left {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    font-size: var(--font-size-m);
+    white-space: nowrap;
+  }
+
+  &__topbar-divider {
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  &__exit {
+    font-weight: 700;
+    color: var(--color-brand-mint);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__claim-timer {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Contextual shortcut bar — global set always visible; the focused region's
+  // group is revealed by the cockpit controller. Scrolls rather than wrapping so
+  // the top bar stays one row.
+  &__shortcuts {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    min-width: 0;
+    overflow-x: auto;
+    font-size: var(--font-size-s);
+  }
+
+  &__sc-label {
+    flex: none;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text);
+  }
+
+  &__sc-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    white-space: nowrap;
+
+    // Explicit display would otherwise defeat the [hidden] attribute the
+    // controller toggles, so restore display:none for hidden groups.
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__sc {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxxs);
+    color: var(--color-space-text);
+
+    // The shortcut kbd chips read white in the top bar too (override the muted
+    // default from the shared kbd rule).
+    kbd {
+      color: var(--color-space-text);
+    }
+
+    &--muted {
+      font-style: italic;
+      opacity: 0.7;
+    }
+  }
+
+  // ── Grid ─────────────────────────────────────────────────────────────────
+  // Devlogs scrolls on its own down the left; the review region (all six cards)
+  // is a single scroll container beside it.
+  &__grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.5fr 2.2fr; // devlogs | review region
+    gap: var(--space-s);
+  }
+
+  // The review card area, a 4-column grid. Rows: project + feedback; review
+  // history + verdict; then the file browser beside the queue-actions/notes side
+  // stack. The whole region scrolls together; review history and notes scroll on
+  // their own. History and the side stack fill their row, so a taller neighbour —
+  // a claimed verdict form, or a long README in the file browser — never strands
+  // them with a gap.
+  &__review {
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    align-content: start;
+    grid-template-columns: 1.35fr 0.2833fr 0.1417fr 0.425fr;
+    grid-template-areas:
+      "project feedback feedback feedback"
+      "history history  history  verdict"
+      "files   files    side     side";
+    gap: var(--space-s);
+  }
+
+  // Devlogs runs full height down the far-left column.
+  &__col {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    overflow: hidden; // config bar pinned; the devlog list scrolls
+  }
+
+  // Review-area cards placed into the 2×3 grid by grid-area. They never scroll
+  // on their own — the whole review region scrolls together.
+  &__card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding: var(--space-s);
+    background: var(--color-set-2-bg);
+
+    &--project { grid-area: project; }
+    &--feedback { grid-area: feedback; }
+    &--history { grid-area: history; }
+    &--verdict { grid-area: verdict; }
+    &--files { grid-area: files; }
+  }
+
+  // The focused region gets a soft ring — and drives the contextual shortcut bar.
+  &__col,
+  &__card {
+    border-radius: var(--profile-radius);
+    outline: none;
+    transition: box-shadow 0.12s ease;
+  }
+
+  // Review cards live inside the review scroll container, so their selection ring
+  // is inset — an outer ring would be clipped against the container's edges.
+  &__card:focus,
+  &__card:focus-within {
+    box-shadow: inset 0 0 0 2px var(--color-brand-lilac);
+  }
+
+  // The devlogs column isn't in a scroll container, and its children (config bar,
+  // devlog list) fill it edge to edge — an inset ring would sit behind them. So it
+  // gets a crisp outer ring + halo, which renders cleanly around the whole column.
+  &__col:focus,
+  &__col:focus-within {
+    box-shadow: 0 0 0 2px var(--color-brand-lilac), 0 0 0 6px var(--color-brand-lilac-soft);
+  }
+
+  // Review history fills its row — matching the verdict card beside it, which
+  // grows tall once a review is claimed — with a comfortable floor, and scrolls
+  // its past-review list internally instead of growing the card.
+  &__card--history {
+    align-self: stretch;
+    min-height: 16.5rem;
+  }
+
+  &__history-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  // Queue-actions + notes side stack, filling the row beside the file browser. The
+  // two cards sit at the top at their own heights; any extra height (a long README
+  // making the file browser tall) falls below the stack, not between the cards.
+  &__side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    min-height: 0;
+  }
+
+  &__card--queue {
+    height: 7rem;
+  }
+
+  &__card--notes {
+    height: 16.5rem;
+    overflow-y: auto;
+  }
+
+  // ── Shared cards / panels ─────────────────────────────────────────────────
+  &__config-bar,
+  &__devlog {
+    padding: var(--space-s);
+    background: var(--color-set-2-bg);
+    border-radius: var(--profile-radius);
+  }
+
+  // Devlog column toolbar — count + sort control group.
+  &__config-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  &__config-count {
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    color: var(--color-space-text);
+  }
+
+  // Segmented sort control — a subtle rounded track holding two segments. Only the
+  // active segment is filled; the inactive one is plain text on the track.
+  &__config-group {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+  }
+
+  &__config-btn {
+    appearance: none;
+    padding: var(--space-xxxs) var(--space-m);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--color-space-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.12s ease, background 0.12s ease;
+
+    &:hover:not(.is-active) {
+      color: var(--color-space-text);
+    }
+
+    &.is-active {
+      color: var(--color-set-1-bg);
+      background: var(--color-brand-mint);
+    }
+  }
+
+  &__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  &__panel-title {
+    font-weight: 700;
+    font-size: var(--font-size-m);
+  }
+
+  // ── Column 1: devlogs ──────────────────────────────────────────────────────
+  &__devlogs {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__devlog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  // The current devlog is marked ONLY while the devlogs column itself is selected,
+  // so the mint ring doesn't linger on a devlog once focus moves to another pane.
+  // Inset (not an outer halo) so the devlog scroller can't clip it.
+  &__col--devlogs:focus-within &__devlog.is-current {
+    box-shadow: inset 0 0 0 3px var(--color-brand-mint);
+  }
+
+  // Lapse timelapse strip inside a devlog card.
+  &__timelapses {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__timelapses-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-brand-mint);
+  }
+
+  &__timelapse-strip {
+    display: flex;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0 0 var(--space-xxs);
+    list-style: none;
+    overflow-x: auto;
+  }
+
+  &__timelapse {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: 6rem;
+    height: 3.6rem;
+    overflow: hidden;
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+  }
+
+  &__timelapse-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-m);
+    }
+  }
+
+  &__timelapse-dur {
+    position: absolute;
+    right: 0.2rem;
+    bottom: 0.2rem;
+    padding: 0 0.3rem;
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-off-white);
+    background: var(--color-backdrop);
+    border-radius: 4px;
+  }
+
+  &__devlog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__devlog-date {
+    font-weight: 600;
+    color: var(--color-brand-blue);
+  }
+
+  // Hours-logged tag on the right of the devlog header.
+  &__devlog-hours {
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  // Devlog body — markdown text; keep long tokens/URLs from overflowing the
+  // narrow column. Global .markdown-content supplies the typography.
+  &__devlog-body {
+    min-width: 0;
+    font-size: var(--font-size-s);
+    overflow-wrap: anywhere;
+  }
+
+  &__devlogs-empty {
+    margin: var(--space-s) 0 0;
+    text-align: center;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  // ── Column 2: project head ─────────────────────────────────────────────────
+  &__project-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__project-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  // Funding ask — the headline number on a design review, called out so the
+  // requested amount and tier cap read at a glance.
+  &__ask {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: var(--space-xxs) var(--space-s);
+    background: var(--color-brand-highlight-faint);
+    border-radius: var(--profile-radius);
+  }
+
+  &__ask-amount {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-brand-yellow);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__ask-label {
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__ask-tier {
+    margin-left: auto;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+  }
+
+  &__project-name {
+    margin: 0;
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+  }
+
+  &__owner-row,
+  &__meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__avatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-space-surface-soft);
+  }
+
+  &__banner {
+    width: 100%;
+    height: 4.5rem;
+    object-fit: cover;
+    border-radius: var(--profile-radius);
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-s);
+      background: var(--color-space-surface-faint);
+      border: 1px dashed var(--color-space-border);
+    }
+  }
+
+  &__project-id {
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-space-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__waiting--overdue {
+    color: var(--color-brand-salmon);
+    font-weight: 700;
+  }
+
+  &__description {
+    margin: 0;
+    font-size: var(--font-size-s);
+    line-height: 1.5;
+    color: var(--color-space-text);
+    white-space: pre-wrap;
+
+    &--empty {
+      color: var(--color-space-text-muted);
+      font-style: italic;
+    }
+  }
+
+  &__waiting {
+    margin-left: auto;
+  }
+
+  &__meta-link {
+    color: var(--color-brand-blue);
+  }
+
+  // Pills — small labels on top of the card surface.
+  &__pill {
+    padding: 0.15rem 0.6rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-brand-lilac);
+    background: var(--color-brand-lilac-soft);
+    border: 1px solid rgba(235, 183, 255, 0.3);
+    border-radius: 999px;
+  }
+
+  // Queue actions — skip / unclaim (outline pills) + the reused fraud-flag
+  // control (an action-btn from the shared partial).
+  &__queue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+
+    // button_to wraps each control in a <form>; collapse it so the button is
+    // the flex item (mirrors .project-show__pill-form).
+    .hardware-cockpit__queue-form {
+      display: contents;
+    }
+
+    // The reused fraud-flag partial ships an action-btn; nudge it to read as a
+    // pill so the row is consistent, without touching the shared partial.
+    .action-btn--destructive {
+      padding: var(--space-xxs) var(--space-m);
+      border-radius: 999px;
+    }
+  }
+
+  // Shared geometry for every cockpit action button — verdict, queue, claim,
+  // retry — so they read as one consistent family. Colors are set per class.
+  &__action,
+  &__queue-btn,
+  &__claim-cta,
+  &__files-retry {
+    appearance: none;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xxxs) var(--space-xs);
+    min-width: 0;
+    padding: var(--space-xs) var(--space-m);
+    font-family: inherit;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    line-height: 1.15;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: filter 0.12s ease;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  // Queue actions — secondary/utility, so they're outline pills: skip neutral,
+  // unclaim danger.
+  &__queue-btn {
+    background: transparent;
+
+    &--skip {
+      color: var(--color-space-text);
+      border-color: var(--color-space-border);
+    }
+
+    &--unclaim {
+      color: var(--color-brand-salmon);
+      border-color: var(--color-brand-salmon);
+    }
+  }
+
+  // File browser card — file tree rail + readme, filling the card.
+  &__readme {
+    display: flex;
+    flex: 1;
+    gap: var(--space-s);
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  // ── File browser (async: certification--hardware-file-browser) ──────────────
+  &__files-rail {
+    flex: 0 0 15rem;
+    min-width: 0;
+    align-self: flex-start;
+    max-height: 26rem; // long trees scroll internally, don't balloon the card
+    overflow-y: auto;
+    padding: var(--space-xs);
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+  }
+
+  &__files-railhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xxs);
+  }
+
+  &__files-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+  }
+
+  // "Back to README" pill in the rail head.
+  &__files-readme {
+    appearance: none;
+    padding: 0.05rem var(--space-xs);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-brand-mint);
+    background: transparent;
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--color-brand-mint);
+    }
+  }
+
+  &__file-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  // Each file is a full-width button — [type badge] name … size — that swaps the
+  // preview pane on click.
+  &__file {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    width: 100%;
+    padding: 0.15rem var(--space-xxs);
+    font-family: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-overlay-light-soft);
+    }
+
+    &.is-active {
+      background: var(--color-brand-mint-soft);
+    }
+  }
+
+  // Type badge — one colour per file kind (see RepoFileKind).
+  &__file-badge {
+    flex: none;
+    width: 3.1rem;
+    padding: 0.05rem 0;
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--color-set-1-bg);
+    background: var(--color-space-text-muted);
+    border-radius: 4px;
+
+    &--doc { background: var(--color-brand-blue); }
+    &--cad { background: var(--color-brand-peach); }
+    &--kicad { background: var(--color-brand-mint); }
+    &--gbr { background: var(--color-brand-salmon); }
+    &--fw,
+    &--code { background: var(--color-brand-lilac); }
+    &--data { background: var(--color-brand-cream); }
+    &--img { background: var(--color-brand-yellow); }
+  }
+
+  &__file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__file-size {
+    flex: none;
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-space-text-muted);
+  }
+
+  // Preview pane — the rendered README by default, or the selected file.
+  &__preview {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    // README / markdown images load by default; keep them inside the column.
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--profile-radius);
+    }
+  }
+
+  &__preview-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+    padding-bottom: var(--space-xxs);
+    border-bottom: 1px solid var(--color-space-border);
+  }
+
+  &__preview-path {
+    min-width: 0;
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__preview-link {
+    flex: none;
+    margin-left: auto;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-brand-blue);
+  }
+
+  // Code / text file body — monospace, scrolls both ways inside the pane.
+  &__code {
+    margin: 0;
+    max-height: 26rem;
+    overflow: auto;
+    padding: var(--space-s);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+    color: var(--color-space-text);
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  &__preview-image {
+    display: flex;
+    justify-content: center;
+
+    img {
+      max-height: 24rem;
+      object-fit: contain;
+    }
+  }
+
+  &__preview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: var(--space-m) 0;
+  }
+
+  &__files-note,
+  &__files-empty {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__files-empty {
+    margin: auto;
+  }
+
+  &__files-status {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    min-height: 8rem;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__files-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--color-overlay-light);
+    border-top-color: var(--color-brand-mint);
+    border-radius: 50%;
+    animation: hardware-cockpit-spin 0.7s linear infinite;
+  }
+
+  &__files-retry {
+    color: var(--color-brand-mint);
+    background: transparent;
+    border-color: var(--color-space-border);
+  }
+
+  // ── Verdict actions ────────────────────────────────────────────────────────
+  // The verdict card is only half the right column, so the buttons stack.
+  &__verdict-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  // Verdict buttons — the primary decisions, so they're filled + vibrant:
+  // approve = green, return = peach, perm reject = red. Secondary "approve, no
+  // grant" is an understated green outline. (See __btn for the shared geometry.)
+  &__action {
+    // Armed by a keyboard verdict shortcut, waiting for the confirming keypress.
+    &.is-armed {
+      box-shadow: 0 0 0 3px var(--color-brand-mint);
+      animation: hardware-cockpit-pulse 0.9s ease-in-out infinite;
+    }
+
+    &--approve {
+      background: var(--color-green-400);
+      color: var(--color-brand-off-white);
+    }
+
+    &--approve-alt {
+      color: var(--color-green-300);
+      border-color: var(--color-green-400);
+    }
+
+    &--return {
+      background: var(--color-brand-peach);
+      color: var(--color-set-1-bg);
+    }
+
+    &--reject {
+      background: var(--color-red-400);
+      color: var(--color-brand-off-white);
+    }
+  }
+
+  // ── Verdict / feedback form (shared cockpit-verdict-form across the two cards) ─
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__label {
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-space-text-muted);
+  }
+
+  &__textarea,
+  &__input {
+    width: 100%;
+    padding: var(--space-xs) var(--space-s);
+    font-family: inherit;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--profile-radius);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-border-input-focus);
+    }
+  }
+
+  &__textarea {
+    min-height: 6rem;
+    resize: vertical;
+  }
+
+  // Idle / not-claimed messages shown in the feedback + verdict cards.
+  &__idle {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  // The single claim CTA, in the unclaimed amber top bar. A solid dark fill reads
+  // as the primary action against the bright amber.
+  &__claim-cta {
+    flex: none;
+    color: var(--color-brand-off-white);
+    background: var(--color-set-1-bg);
+  }
+
+  // Static keyboard hint chip.
+  &__kbd,
+  kbd {
+    padding: 0.05rem 0.4rem;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+    background: var(--color-overlay-light-soft);
+    border: 1px solid var(--color-overlay-light);
+    border-radius: 4px;
+  }
+
+  // ── Placeholders ────────────────────────────────────────────────────────────
+  &__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xxxs);
+    min-height: 3rem;
+    padding: var(--space-s);
+    text-align: center;
+    color: var(--color-space-text-muted);
+    background: var(--color-space-surface-faint);
+    border: 1px dashed var(--color-space-border);
+    border-radius: var(--profile-radius);
+
+    // The remaining placeholder variants are used only by the notes card, which
+    // is still a skeleton pending its backend.
+    &--field {
+      min-height: 2.5rem;
+    }
+
+    &--ledger {
+      min-height: 14rem;
+    }
+  }
+
+  &__placeholder-label {
+    font-weight: 600;
+    color: var(--color-space-text);
+  }
+
+  &__placeholder-note {
+    font-size: var(--font-size-xs);
+  }
+
+  // ── Image / timelapse lightbox (keyboard shortcuts) ──────────────────────────
+  &__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: var(--space-xl);
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  &__lightbox-close {
+    position: absolute;
+    top: var(--space-m);
+    right: var(--space-l);
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: var(--font-size-xxl);
+    line-height: 1;
+    color: var(--color-space-text);
+    background: var(--color-set-2-bg);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  &__lightbox-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: min(90vw, 1400px);
+    max-height: 80vh;
+  }
+
+  &__lightbox-media {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--profile-radius);
+  }
+
+  &__lightbox-caption {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+}
+
+// Armed verdict button pulse (keyboard confirm step).
+@keyframes hardware-cockpit-pulse {
+  50% {
+    box-shadow: 0 0 0 6px var(--color-brand-mint-soft);
+  }
+}
+
+// Narrow screens: drop the areas and stack everything in one scrolling column.
+@media (max-width: 1100px) {
+  .hardware-cockpit {
+    position: static;
+    min-height: 100vh;
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__review {
+      grid-template-columns: 1fr;
+      grid-template-areas: none;
+      overflow: visible;
+    }
+
+    &__col {
+      overflow: visible;
+    }
+  }
+}
+
+// File-browser loading spinner.
+@keyframes hardware-cockpit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hardware-cockpit__files-spinner {
+    animation: none;
+  }
+}

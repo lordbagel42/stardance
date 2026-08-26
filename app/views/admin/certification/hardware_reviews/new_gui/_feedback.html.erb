@@ -1,0 +1,158 @@
+<%# Cockpit feedback card. Opens the shared verdict <form id="cockpit-verdict-form">
+    that the VERDICT card's submit buttons drive via the HTML `form=` attribute
+    (see _verdict). Feedback text + the file upload live here; the grant amount and
+    the approve / return controls live in _verdict. The form is opened AND closed
+    inside this card, so nothing is nested across the two grid cells.
+
+    Design (funding) reuses the multi-image feedback drop (review-feedback-images);
+    build (ship) reuses the walkthrough-video drop (certification--video-drop) and
+    the feedback-template picker. State mirrors _verdict:
+      • no active review  -> calm idle message
+      • not the claimant  -> prompt to claim (the claim button itself is in _verdict)
+      • claimant          -> the live form %>
+<%
+  review = @active_review
+  review_type = @active_review_type
+  claimed = review&.claim_held_by?(current_user)
+%>
+<section class="hardware-cockpit__card hardware-cockpit__card--feedback" aria-label="Feedback"
+         tabindex="0" data-cockpit-region="actions">
+  <header class="hardware-cockpit__panel-head">
+    <span class="hardware-cockpit__panel-title">feedback</span>
+    <kbd class="hardware-cockpit__kbd">ctrl+enter</kbd>
+  </header>
+
+  <% if review.nil? %>
+    <p class="hardware-cockpit__idle">No review is currently pending on this project.</p>
+
+  <% elsif !claimed %>
+    <p class="hardware-cockpit__idle">Claim this review from the top bar to leave feedback.</p>
+
+  <% elsif review_type == :funding %>
+    <%= form_with model: @funding_request, url: admin_certification_funding_request_path(@funding_request),
+          method: :patch, multipart: true, id: "cockpit-verdict-form", class: "hardware-cockpit__form" do |f| %>
+      <%# Sends the verdict back to this hardware cockpit rather than the design queue. %>
+      <%= hidden_field_tag :redirect_to_hardware, @funding_request.project_id %>
+
+      <div class="hardware-cockpit__field">
+        <%= f.label :feedback, "Feedback — visible to the project owner", class: "hardware-cockpit__label" %>
+        <%= f.text_area :feedback, rows: 6, maxlength: 10_000, class: "hardware-cockpit__textarea" %>
+      </div>
+
+      <%# Reused verbatim from the classic funding form so the shared
+          review-feedback-images controller + styles keep working. %>
+      <div class="review-form__field review-form__images"
+           data-controller="review-feedback-images"
+           data-review-feedback-images-max-value="<%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %>">
+        <%= f.label :feedback_images, "Attach images (optional)", class: "hardware-cockpit__label" %>
+        <p class="review-form__hint">
+          Annotated photos — wiring shots, schematics — up to <%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %>, shown to the builder.
+        </p>
+
+        <% if @funding_request.feedback_images.any?(&:persisted?) %>
+          <p class="review-form__images-heading">Already attached</p>
+          <%= render "admin/certification/funding_requests/feedback_images", funding_request: @funding_request %>
+        <% end %>
+
+        <label class="review-form__image-drop"
+               data-review-feedback-images-target="dropZone"
+               data-action="dragover->review-feedback-images#dragover dragleave->review-feedback-images#dragleave drop->review-feedback-images#drop">
+          <%= f.file_field :feedback_images,
+                multiple: true,
+                accept: Certification::FundingRequest::FEEDBACK_IMAGE_CONTENT_TYPES.join(","),
+                class: "review-form__image-input",
+                data: { review_feedback_images_target: "input", action: "change->review-feedback-images#select" } %>
+          <span class="review-form__image-drop-text">Drag images here, or click to choose</span>
+        </label>
+
+        <ul class="review-form__image-grid" data-review-feedback-images-target="grid" hidden></ul>
+      </div>
+    <% end %>
+
+  <% elsif review_type == :ship %>
+    <%= form_with model: @ship, url: admin_certification_ship_path(@ship), method: :patch,
+          id: "cockpit-verdict-form", class: "hardware-cockpit__form",
+          data: { controller: "certification--video-drop certification--feedback-templates",
+                  action: "submit->certification--video-drop#guardSubmit",
+                  "certification--video-drop-over-class": "video-drop--over",
+                  "certification--video-drop-uploading-class": "video-drop--uploading",
+                  "certification--video-drop-done-class": "video-drop--done",
+                  "certification--video-drop-error-class": "video-drop--error",
+                  "certification--video-drop-direct-upload-url-value": rails_direct_uploads_url } do |f| %>
+      <%# Sends the verdict back to this hardware cockpit rather than the build queue. %>
+      <%= hidden_field_tag :redirect_to_hardware, @ship.project_id %>
+
+      <div class="hardware-cockpit__field">
+        <%= f.label :feedback, "Feedback — visible to the project owner", class: "hardware-cockpit__label" %>
+        <%# Template picker reused verbatim from the classic ship form. %>
+        <div class="review-form__template-bar">
+          <select class="review-form__templates" aria-label="Insert a feedback template"
+                  data-certification--feedback-templates-target="picker"
+                  data-action="certification--feedback-templates#insert">
+            <option value="" selected>Insert a template&hellip;</option>
+            <optgroup label="Standard">
+              <% Certification::Ship::FEEDBACK_TEMPLATES.each do |template| %>
+                <option data-body="<%= template[:body] %>"><%= template[:label] %></option>
+              <% end %>
+            </optgroup>
+            <%# Filled client-side from localStorage by the feedback-templates controller. %>
+            <optgroup label="Your templates" data-certification--feedback-templates-target="personalGroup"></optgroup>
+          </select>
+          <button type="button" class="review-form__template-action"
+                  data-action="certification--feedback-templates#save">
+            Save as template
+          </button>
+          <button type="button" class="review-form__template-action review-form__template-action--danger"
+                  data-certification--feedback-templates-target="deleteButton"
+                  data-action="certification--feedback-templates#delete" hidden>
+            Delete template
+          </button>
+        </div>
+        <%= f.text_area :feedback, rows: 6, maxlength: 10_000, class: "hardware-cockpit__textarea",
+              data: { "certification--feedback-templates-target": "feedback" } %>
+      </div>
+
+      <%# Walkthrough-video drop reused verbatim from the classic ship form; the
+          video-drop controller (on the form) direct-uploads and appends the blob's
+          signed id, so the verdict buttons in _verdict submit the uploaded video. %>
+      <div class="hardware-cockpit__field">
+        <%= f.label :verdict_video, "Walkthrough video (mp4, webm, or mov)", class: "hardware-cockpit__label" %>
+        <div class="video-drop"
+             data-certification--video-drop-target="zone"
+             data-action="dragover->certification--video-drop#over
+                          dragleave->certification--video-drop#leave
+                          drop->certification--video-drop#drop">
+          <%= f.file_field :verdict_video, accept: "video/mp4,video/webm,video/quicktime",
+                class: "video-drop__input",
+                data: { "certification--video-drop-target": "input",
+                        action: "certification--video-drop#change" } %>
+          <button type="button" class="video-drop__prompt"
+                  data-certification--video-drop-target="prompt"
+                  data-action="certification--video-drop#open">
+            Drag a video here, or click to choose one
+          </button>
+          <div class="video-drop__preview" data-certification--video-drop-target="preview" hidden>
+            <video class="video-drop__video" data-certification--video-drop-target="video" controls muted playsinline></video>
+            <p class="video-drop__filename" data-certification--video-drop-target="filename"></p>
+            <button type="button" class="video-drop__replace"
+                    data-action="certification--video-drop#open">
+              Choose a different video
+            </button>
+          </div>
+          <div class="video-drop__progress" role="progressbar" aria-label="Video upload"
+               aria-valuemin="0" aria-valuemax="100"
+               data-certification--video-drop-target="progressWrapper" hidden>
+            <div class="video-drop__progress-bar" data-certification--video-drop-target="progressBar"></div>
+          </div>
+          <p class="video-drop__status" role="status" aria-live="polite"
+             data-certification--video-drop-target="status"></p>
+        </div>
+        <% if @ship.verdict_video.attached? %>
+          <p class="review-form__current">
+            Current: <%= link_to @ship.verdict_video.filename, @ship.verdict_video, target: "_blank", rel: "noopener" %>
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</section>

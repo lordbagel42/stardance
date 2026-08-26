@@ -1,0 +1,8 @@
+<%# Cockpit notes-ledger card. STATIC SKELETON — to be wired to the internal,
+    timestamped reviewer notes ledger (add note + list). %>
+<% ph = "admin/certification/hardware_reviews/new_gui/placeholder" %>
+<section class="hardware-cockpit__card hardware-cockpit__card--notes" aria-label="Notes"
+         tabindex="0" data-cockpit-region="actions">
+  <%= render ph, label: "add note", variant: "field" %>
+  <%= render ph, label: "notes ledger", variant: "ledger" %>
+</section>

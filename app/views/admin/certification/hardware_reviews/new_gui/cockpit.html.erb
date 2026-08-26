@@ -1,0 +1,109 @@
+<% content_for :title, "Hardware review: #{@project.title}" %>
+
+<%# ─────────────────────────────────────────────────────────────────────────
+    :new_hardware_gui reviewer cockpit — full-screen redesign of the hardware
+    review page (see the Notion mockup / docs). The layout shell lives here; each
+    card is its own partial under new_gui/. Cards are being wired to real data
+    one at a time — any still-static ones render labeled `_placeholder` boxes.
+    ───────────────────────────────────────────────────────────────────────── %>
+<div class="hardware-cockpit" data-body-class="hardware-cockpit-page"
+     data-controller="certification--hardware-cockpit"
+     data-certification--hardware-cockpit-expires-at-value="<%= @claim_expires_at&.iso8601 %>"
+     data-certification--hardware-cockpit-server-now-value="<%= Time.current.iso8601 %>">
+  <%# Top bar: escape hatch + claim countdown, plus the contextual shortcut bar.
+      The global group is always shown; the group whose data-cockpit-group matches
+      the focused region's data-cockpit-region is revealed by the controller. %>
+  <header class="hardware-cockpit__topbar<%= " hardware-cockpit__topbar--unclaimed" if @active_review && @claim_expires_at.blank? %>">
+    <div class="hardware-cockpit__topbar-left">
+      <%= link_to "Exit", hardware_queue_path("design"), class: "hardware-cockpit__exit" %>
+      <% if @claim_expires_at %>
+        <span class="hardware-cockpit__topbar-divider" aria-hidden="true">|</span>
+        <span class="hardware-cockpit__claim">Claim ending in <time class="hardware-cockpit__claim-timer"
+              data-certification--hardware-cockpit-target="countdown">00h:00m:00s</time></span>
+        <%# Unclaim lives here next to the countdown so the whole claim lifecycle is
+            in the top bar; the queue-actions card keeps skip + the fraud flag. %>
+        <% unclaim_path = @active_review_type == :ship ?
+             admin_certification_ship_claim_path(@active_review) :
+             admin_certification_funding_request_claim_path(@active_review) %>
+        <%= button_to "unclaim", unclaim_path, method: :delete,
+              params: { redirect_to_hardware: @project&.id },
+              class: "hardware-cockpit__queue-btn hardware-cockpit__queue-btn--unclaim",
+              form_class: "hardware-cockpit__topbar-form" %>
+      <% elsif @active_review %>
+        <%# Unclaimed: loud amber warning + the single claim CTA. Reuses the shared
+            claim endpoints (funding/ship) with redirect_to_hardware so it lands back
+            here claimed. %>
+        <span class="hardware-cockpit__topbar-divider" aria-hidden="true">|</span>
+        <span class="hardware-cockpit__claim-warning">
+          <span class="hardware-cockpit__claim-warning-icon" aria-hidden="true">⚠</span>
+          You haven't claimed this review — claim it to leave feedback or record a verdict.
+        </span>
+        <% claim_path = @active_review_type == :ship ?
+             admin_certification_ship_claim_path(@active_review) :
+             admin_certification_funding_request_claim_path(@active_review) %>
+        <%= button_to "Claim &amp; start reviewing".html_safe, claim_path, method: :post,
+              params: { redirect_to_hardware: @project.id },
+              class: "hardware-cockpit__claim-cta", form_class: "hardware-cockpit__topbar-form" %>
+      <% end %>
+    </div>
+
+    <div class="hardware-cockpit__shortcuts" aria-label="Keyboard shortcuts">
+      <span class="hardware-cockpit__sc-label">Shortcuts</span>
+      <div class="hardware-cockpit__sc-group hardware-cockpit__sc-group--global">
+        <span class="hardware-cockpit__sc"><kbd>ctrl+space</kbd> devlogs</span>
+        <span class="hardware-cockpit__sc"><kbd>ctrl+enter</kbd> feedback</span>
+      </div>
+      <div class="hardware-cockpit__sc-group" data-cockpit-group="devlogs" hidden>
+        <span class="hardware-cockpit__sc"><kbd>ctrl+↑/↓</kbd> next devlog</span>
+        <span class="hardware-cockpit__sc"><kbd>shift+d</kbd> text</span>
+        <span class="hardware-cockpit__sc"><kbd>shift+i</kbd> gallery</span>
+        <span class="hardware-cockpit__sc"><kbd>shift+1/2/3</kbd> open image</span>
+        <span class="hardware-cockpit__sc"><kbd>shift+t</kbd> timelapse</span>
+        <span class="hardware-cockpit__sc"><kbd>←/→</kbd> scrub</span>
+      </div>
+      <div class="hardware-cockpit__sc-group" data-cockpit-group="project" hidden>
+        <span class="hardware-cockpit__sc hardware-cockpit__sc--muted">no shortcuts yet</span>
+      </div>
+      <div class="hardware-cockpit__sc-group" data-cockpit-group="actions" hidden>
+        <span class="hardware-cockpit__sc"><kbd>ctrl+p</kbd> approve</span>
+        <span class="hardware-cockpit__sc"><kbd>ctrl+e</kbd> return</span>
+        <span class="hardware-cockpit__sc"><kbd>shift+XX</kbd> reject</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="hardware-cockpit__grid">
+    <%= render "admin/certification/hardware_reviews/new_gui/devlogs" %>
+
+    <%# The review cards live in one scroll region (they never scroll on their
+        own — the whole region scrolls together, except review history). Each
+        card is its own partial. %>
+    <div class="hardware-cockpit__review">
+      <%= render "admin/certification/hardware_reviews/new_gui/project_info" %>
+      <%= render "admin/certification/hardware_reviews/new_gui/feedback" %>
+
+      <%# Review history — real past reviews; scrolls internally. Each review
+          carries its own admin control, so no card-level reverse marker. %>
+      <section class="hardware-cockpit__card hardware-cockpit__card--history" aria-label="Review history"
+               tabindex="0" data-cockpit-region="project">
+        <header class="hardware-cockpit__panel-head">
+          <span class="hardware-cockpit__panel-title">Review history</span>
+        </header>
+        <div class="hardware-cockpit__history-scroll">
+          <%= render "admin/certification/hardware_reviews/review_history" %>
+        </div>
+      </section>
+
+      <%= render "admin/certification/hardware_reviews/new_gui/verdict" %>
+      <%= render "admin/certification/hardware_reviews/new_gui/files" %>
+
+      <%# Queue actions + notes stack on the right of the file browser. Wrapped into
+          one grid cell so a long README growing the file browser doesn't prise these
+          two cards apart — any slack falls below the stack, not between the cards. %>
+      <div class="hardware-cockpit__side">
+        <%= render "admin/certification/hardware_reviews/new_gui/queue_actions" %>
+        <%= render "admin/certification/hardware_reviews/new_gui/notes" %>
+      </div>
+    </div>
+  </div>
+</div>

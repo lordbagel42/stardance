@@ -844,6 +844,8 @@ Rails.application.routes.draw do
           post :skip
         end
         post :flag_for_fraud, on: :member
+        get :files, on: :member
+        get :file_preview, on: :member
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -895,6 +897,8 @@ Rails.application.routes.draw do
           post :skip
         end
         post :flag_for_fraud, on: :member
+        get :files, on: :member
+        get :file_preview, on: :member
       end
 
       resources :devlog_reviews, only: [ :update ]

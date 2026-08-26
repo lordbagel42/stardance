@@ -1,0 +1,85 @@
+<%# Cockpit project-info card — the "what is this" band a reviewer reads first:
+    banner, name + stage/ask/tier pills, owner, waiting time, hours/devlogs,
+    links, and description. All data guarded: @owner and @active_review can be
+    nil, and @funding_request only exists once design funding has been asked for.
+    Waiting/hours derivations mirror _review_facts.html.erb so both pages agree. %>
+<section class="hardware-cockpit__card hardware-cockpit__card--project" aria-label="Project info"
+         tabindex="0" data-cockpit-region="project">
+  <% if @project.banner.attached? %>
+    <%= image_tag @project.banner.variant(:card), alt: "", class: "hardware-cockpit__banner" %>
+  <% else %>
+    <div class="hardware-cockpit__banner hardware-cockpit__banner--empty">No banner uploaded</div>
+  <% end %>
+
+  <div class="hardware-cockpit__project-head">
+    <div class="hardware-cockpit__project-title-row">
+      <h1 class="hardware-cockpit__project-name"><%= @project.title %></h1>
+      <span class="hardware-cockpit__project-id">#<%= @project.id %></span>
+
+      <% if @project.design_stage? || @project.build_stage? %>
+        <span class="hardware-cockpit__pill">
+          <%= @project.design_stage? ? "Design" : "Build" %>
+        </span>
+      <% end %>
+    </div>
+
+    <%# Funding ask — called out prominently so the requested amount and the tier
+        cap are the first thing a reviewer reads on a design review. %>
+    <% if @funding_request&.requested_amount_dollars.to_i.positive? %>
+      <div class="hardware-cockpit__ask">
+        <span class="hardware-cockpit__ask-amount">$<%= @funding_request.requested_amount_dollars %></span>
+        <span class="hardware-cockpit__ask-label">requested</span>
+        <% if @funding_request.tier_max_dollars %>
+          <span class="hardware-cockpit__ask-tier">
+            <%= @funding_request.tier_label %> limit <strong>$<%= @funding_request.tier_max_dollars %></strong>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="hardware-cockpit__owner-row">
+      <% if @owner %>
+        <%= image_tag @owner.avatar, alt: "", class: "hardware-cockpit__avatar" %>
+        <span class="hardware-cockpit__owner-name"><%= @owner.display_name %></span>
+        <% if @owner.slack_id.present? %>
+          <span class="hardware-cockpit__topbar-divider" aria-hidden="true">|</span>
+          <span class="hardware-cockpit__owner-slack"><%= @owner.slack_id %></span>
+        <% end %>
+      <% else %>
+        <span class="hardware-cockpit__avatar" aria-hidden="true"></span>
+        <span class="hardware-cockpit__owner-name">Unknown owner</span>
+      <% end %>
+
+      <% if @active_review %>
+        <% wait_seconds = Time.current - @active_review.created_at %>
+        <% wait_days = (wait_seconds / 1.day).floor %>
+        <% wait_hours = (wait_seconds / 1.hour).floor % 24 %>
+        <% overdue = wait_days >= @active_review.class::SLA_DAYS %>
+        <span class="hardware-cockpit__waiting <%= "hardware-cockpit__waiting--overdue" if overdue %>">
+          Waiting <%= wait_days %>d <%= wait_hours %>h<%= " · overdue" if overdue %>
+        </span>
+      <% end %>
+    </div>
+
+    <div class="hardware-cockpit__meta-row">
+      <span class="hardware-cockpit__meta">Hours <%= @project.total_ship_hours.round(1) %></span>
+      <span class="hardware-cockpit__meta">Devlogs <%= @project.devlogs_count %></span>
+      <% if (repo_url = safe_external_url(@project.repo_url)) %>
+        <%= link_to "GitHub ↗", repo_url, class: "hardware-cockpit__meta-link",
+              target: "_blank", rel: "noopener noreferrer" %>
+      <% end %>
+      <% if (demo_url = safe_external_url(@project.demo_url)) %>
+        <%= link_to "Demo ↗", demo_url, class: "hardware-cockpit__meta-link",
+              target: "_blank", rel: "noopener noreferrer" %>
+      <% end %>
+      <%= link_to "Project page ↗", project_path(@project), class: "hardware-cockpit__meta-link",
+            target: "_blank", rel: "noopener" %>
+    </div>
+  </div>
+
+  <% if @project.description.present? %>
+    <p class="hardware-cockpit__description"><%= @project.description %></p>
+  <% else %>
+    <p class="hardware-cockpit__description hardware-cockpit__description--empty">No description provided.</p>
+  <% end %>
+</section>

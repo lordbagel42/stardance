@@ -1,0 +1,46 @@
+<%# Single repo-file preview fragment, injected into the file-browser preview
+    pane by certification--hardware-file-browser. @preview[:type] decides how it
+    renders: markdown / code / image show inline; binary / too_large / unsupported
+    / missing / error show a compact placeholder. @preview_path / @preview_kind /
+    @preview_file_url describe the file (nil for the :missing case). %>
+<% if @preview_kind %>
+  <div class="hardware-cockpit__preview-head">
+    <span class="hardware-cockpit__file-badge hardware-cockpit__file-badge--<%= @preview_kind.key %>"><%= @preview_kind.label %></span>
+    <span class="hardware-cockpit__preview-path"><%= @preview_path %></span>
+    <% if @preview_file_url %>
+      <%= link_to "Open ↗", @preview_file_url, class: "hardware-cockpit__preview-link",
+            target: "_blank", rel: "noopener noreferrer" %>
+    <% end %>
+  </div>
+<% end %>
+
+<% case @preview[:type] %>
+<% when :markdown %>
+  <div class="markdown-content"><%= @preview[:html].to_s.html_safe %></div>
+
+<% when :code %>
+  <pre class="hardware-cockpit__code"><code><%= @preview[:body] %></code></pre>
+
+<% when :image %>
+  <div class="hardware-cockpit__preview-image">
+    <%= image_tag @preview[:src], alt: @preview_path, loading: "lazy", referrerpolicy: "no-referrer" %>
+  </div>
+
+<% else %>
+  <div class="hardware-cockpit__preview-empty">
+    <p class="hardware-cockpit__files-note">
+      <% case @preview[:type] %>
+      <% when :binary %>
+        Can't preview this file type<%= " · #{number_to_human_size(@preview[:size])}" if @preview[:size] %>.
+      <% when :too_large %>
+        Too large to preview<%= " · #{number_to_human_size(@preview[:size])}" if @preview[:size] %>.
+      <% when :unsupported %>
+        Inline preview isn't available for this repository host.
+      <% when :missing %>
+        That file isn't in this repository.
+      <% else %>
+        <%= @preview[:message].presence || "Couldn't load this file." %>
+      <% end %>
+    </p>
+  </div>
+<% end %>

@@ -439,6 +439,74 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
           text: /Flagged for fraud review/
   end
 
+  # The :new_hardware_gui flag swaps the classic review page for the full-screen
+  # reviewer cockpit skeleton. Off by default so the classic page still renders.
+  test "without :new_hardware_gui the review page renders the classic show" do
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select ".hardware-review__header"
+    assert_select ".hardware-cockpit", count: 0
+  end
+
+  test "with :new_hardware_gui on the review page renders the cockpit skeleton" do
+    Flipper.enable(:new_hardware_gui, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select ".hardware-cockpit"
+    assert_select ".hardware-cockpit__topbar"
+    # The classic review header gives way to the cockpit.
+    assert_select ".hardware-review__header", count: 0
+  end
+
+  test "the cockpit skeleton is full-screen: no sidebar, no footer" do
+    Flipper.enable(:new_hardware_gui, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select "aside.sidebar", count: 0
+    assert_select "footer.dev-footer", count: 0
+  end
+
+  # The cockpit cards render real platform data. With the claim held, the shared
+  # verdict form is live, so this exercises the wired (not idle) render path.
+  test "the cockpit renders real card data for a claimed design review" do
+    Flipper.enable(:new_hardware_gui, @reviewer)
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    # Project info — real title.
+    assert_select ".hardware-cockpit__project-name", text: /Design bot/
+    # Devlogs column — the project's real devlog renders.
+    assert_select ".hardware-cockpit__devlog"
+    # Review history + file browser cards are present.
+    assert_select ".hardware-cockpit__card--history"
+    assert_select ".hardware-cockpit__card--files"
+    # Verdict + feedback share one live form (claim held).
+    assert_select "form#cockpit-verdict-form"
+    assert_select "textarea[name=?]", "certification_funding_request[feedback]"
+    assert_select "button[form=cockpit-verdict-form][value=approved]"
+    # Skip (queue card) + unclaim (top bar) are available while the claim is held.
+    assert_select ".hardware-cockpit__queue-btn--skip"
+    assert_select ".hardware-cockpit__queue-btn--unclaim"
+  end
+
+  # The file-browser preview only serves files that are in the repo tree; any
+  # other path (traversal attempts, unknown files) 404s. With no repo linked the
+  # tree is empty, so every path is rejected — and nothing hits the network.
+  test "file_preview rejects a path that isn't in the repo tree" do
+    get "#{admin_certification_hardware_review_path(@design_project)}/file_preview",
+        params: { path: "../../etc/passwd" }
+
+    assert_response :not_found
+    assert_select ".hardware-cockpit__preview-empty"
+  end
+
   private
 
   # A second reviewer, to prove a released claim is actually offered onward.

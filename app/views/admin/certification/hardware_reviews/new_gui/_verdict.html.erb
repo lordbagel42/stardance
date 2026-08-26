@@ -1,0 +1,90 @@
+<%# Cockpit verdict card. The grant-amount input and the approve / return controls
+    live here but belong to the shared <form id="cockpit-verdict-form"> opened in
+    _feedback: each submit button carries `form="cockpit-verdict-form"` plus the
+    verdict/status name+value, so clicking one submits the whole feedback+verdict
+    form with that verdict — no JS needed, and no form nesting across cards.
+
+    Verdicts wired to the real endpoints:
+      • Design (funding): approved / approved_without_grant / returned
+      • Build  (ship):    approved / returned
+    "perm reject" has no backend verdict, so it's rendered disabled and flagged for
+    a product decision (see the report). State mirrors _feedback:
+      • no active review  -> calm idle message
+      • not the claimant  -> Claim this review button
+      • claimant          -> the verdict controls %>
+<%
+  review = @active_review
+  review_type = @active_review_type
+  claimed = review&.claim_held_by?(current_user)
+%>
+<section class="hardware-cockpit__card hardware-cockpit__card--verdict" aria-label="Approve or reject"
+         tabindex="0" data-cockpit-region="actions">
+  <% if review.nil? %>
+    <p class="hardware-cockpit__idle">No review is currently pending.</p>
+
+  <% elsif !claimed %>
+    <%# The single claim CTA lives in the top bar now; this card stays read-only
+        until the reviewer holds the claim. %>
+    <p class="hardware-cockpit__idle">Claim this review from the top bar to record a verdict.</p>
+
+  <% elsif review_type == :funding %>
+    <% unless @funding_request.kit_mission? %>
+      <div class="hardware-cockpit__field">
+        <%= label_tag "certification_funding_request_approved_amount_dollars",
+              "Grant amount ($) — up to the #{@funding_request.tier_label} max of $#{@funding_request.tier_max_dollars}",
+              class: "hardware-cockpit__label" %>
+        <%= number_field_tag "certification_funding_request[approved_amount_dollars]",
+              (@funding_request.approved_amount_dollars || @funding_request.requested_amount_dollars),
+              id: "certification_funding_request_approved_amount_dollars",
+              form: "cockpit-verdict-form",
+              min: 0, max: @funding_request.tier_max_dollars, step: 1,
+              class: "hardware-cockpit__input" %>
+        <p class="review-form__hint">Requested $<%= @funding_request.requested_amount_dollars %>.</p>
+      </div>
+    <% end %>
+
+    <div class="hardware-cockpit__verdict-grid">
+      <button type="submit" form="cockpit-verdict-form"
+              name="certification_funding_request[verdict]" value="approved"
+              class="hardware-cockpit__action hardware-cockpit__action--approve">
+        <%= @funding_request.kit_mission? ? "approve & send kit" : "approve & grant" %>
+        <kbd class="hardware-cockpit__kbd">ctrl+p</kbd>
+      </button>
+      <%# The classic form's third approve path: move to build, hand out nothing. %>
+      <button type="submit" form="cockpit-verdict-form"
+              name="certification_funding_request[verdict]" value="approved_without_grant"
+              class="hardware-cockpit__action hardware-cockpit__action--approve-alt">
+        <%= @funding_request.kit_mission? ? "approve, no kit" : "approve, no grant" %>
+      </button>
+      <button type="submit" form="cockpit-verdict-form"
+              name="certification_funding_request[verdict]" value="returned"
+              class="hardware-cockpit__action hardware-cockpit__action--return">
+        return <kbd class="hardware-cockpit__kbd">ctrl+e</kbd>
+      </button>
+      <button type="button" disabled
+              title="Permanent rejection isn't wired yet — use return for changes."
+              class="hardware-cockpit__action hardware-cockpit__action--reject">
+        perm reject <kbd class="hardware-cockpit__kbd">shift+X ×2</kbd>
+      </button>
+    </div>
+
+  <% elsif review_type == :ship %>
+    <div class="hardware-cockpit__verdict-grid">
+      <button type="submit" form="cockpit-verdict-form"
+              name="certification_ship[status]" value="approved"
+              class="hardware-cockpit__action hardware-cockpit__action--approve">
+        approve <kbd class="hardware-cockpit__kbd">ctrl+p</kbd>
+      </button>
+      <button type="submit" form="cockpit-verdict-form"
+              name="certification_ship[status]" value="returned"
+              class="hardware-cockpit__action hardware-cockpit__action--return">
+        return <kbd class="hardware-cockpit__kbd">ctrl+e</kbd>
+      </button>
+      <button type="button" disabled
+              title="Permanent rejection isn't wired yet — use return for changes."
+              class="hardware-cockpit__action hardware-cockpit__action--reject">
+        perm reject <kbd class="hardware-cockpit__kbd">shift+X ×2</kbd>
+      </button>
+    </div>
+  <% end %>
+</section>

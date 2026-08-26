@@ -1,0 +1,35 @@
+<%# Cockpit queue-actions card — skip / unclaim the current review, plus flag the
+    project for fraud.
+
+    Skip and unclaim act on the pending review and only make sense while this
+    reviewer holds its claim, so they're gated on that; the fraud flag applies to
+    the project itself and is always available. All three reuse the shared
+    hardware endpoints (skip, claim-destroy, flag-for-fraud) rather than adding
+    new ones. %>
+<% can_review = @active_review&.claim_held_by?(current_user) %>
+<section class="hardware-cockpit__card hardware-cockpit__card--queue" aria-label="Queue actions"
+         tabindex="0" data-cockpit-region="actions">
+  <div class="hardware-cockpit__queue-actions">
+    <% if can_review %>
+      <% is_ship = @active_review_type == :ship %>
+      <%# Records a per-reviewer skip and hands over the next submission. The skip
+          endpoint reads the stage from the query and the token (which submission)
+          from the body — matching the classic hidden skip form. %>
+      <%= button_to "skip",
+            hardware_skip_path(stage: is_ship ? "build" : "design"),
+            method: :post,
+            params: { token: "#{is_ship ? 'ship' : 'funding'}:#{@active_review.id}" },
+            class: "hardware-cockpit__queue-btn hardware-cockpit__queue-btn--skip",
+            form_class: "hardware-cockpit__queue-form" %>
+
+    <% end %>
+
+    <%# Flag the project for the fraud team. Reuses the shared control (a button +
+        <dialog>, or a read-only badge when a report is already open); it applies
+        to the project, so it stays available even with no active review. %>
+    <% if @project %>
+      <%= render "admin/certification/hardware_reviews/fraud_flag",
+            project: @project, fraud_flag: @project.pending_fraud_report %>
+    <% end %>
+  </div>
+</section>

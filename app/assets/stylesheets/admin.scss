@@ -229,7 +229,10 @@ body.admin-page {
 
   /* ── Buttons ───────────────────────────────────────── */
 
-  button:not(.action-btn),
+  // Cockpit buttons carry their own full styling (see pages/certification/
+  // new_hardware_review); exempt them so this admin reset doesn't clobber their
+  // mint/green/salmon colors, same as the .action-btn escape hatch.
+  button:not(.action-btn):not([class*="hardware-cockpit__"]),
   input[type="submit"] {
     display: inline-flex;
     align-items: center;

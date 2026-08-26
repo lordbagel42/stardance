@@ -63,6 +63,15 @@ module GitHost
       end
     end
 
+    # The blobless clone doesn't carry byte sizes, so entries report size: nil;
+    # the file browser simply omits the size for these hosts.
+    def fetch_file_tree
+      names = fetch_filenames
+      return names if names.nil?
+
+      names.map { |path| { path: path, size: nil } }
+    end
+
     protected
 
     def parse_url!

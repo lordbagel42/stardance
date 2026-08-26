@@ -1,0 +1,32 @@
+<%# Cockpit file-browser card: a GitHub file-tree rail beside the rendered
+    README. Both need live GitHub HTTP, so the card ships empty and
+    certification--hardware-file-browser fetches the tree + README from the async
+    `files` endpoint on connect — keeping the cockpit's first paint free of
+    per-render HTTP. Renders a static empty state when no repo/README is linked. %>
+<% has_source = @project.repo_url.present? || @project.readme_url.present? %>
+<%= tag.section(
+      class: "hardware-cockpit__card hardware-cockpit__card--files",
+      tabindex: 0,
+      "aria-label": "File browser",
+      data: { "cockpit-region": "project" }.merge(
+        has_source ? {
+          controller: "certification--hardware-file-browser",
+          "certification--hardware-file-browser-url-value": "#{hardware_review_path(@project)}/files",
+          "certification--hardware-file-browser-preview-url-value": "#{hardware_review_path(@project)}/file_preview"
+        } : {}
+      )
+    ) do %>
+  <%= tag.div(
+        class: "hardware-cockpit__readme",
+        data: (has_source ? { "certification--hardware-file-browser-target": "content" } : {})
+      ) do %>
+    <% if has_source %>
+      <div class="hardware-cockpit__files-status" role="status">
+        <span class="hardware-cockpit__files-spinner" aria-hidden="true"></span>
+        Loading files…
+      </div>
+    <% else %>
+      <p class="hardware-cockpit__files-empty">No repository or README linked.</p>
+    <% end %>
+  <% end %>
+<% end %>

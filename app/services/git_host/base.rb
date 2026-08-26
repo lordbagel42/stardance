@@ -34,6 +34,23 @@ module GitHost
       raise NotImplementedError
     end
 
+    # Like fetch_filenames but each entry is { path:, size: } (size may be nil when
+    # the host can't report it). Returns nil on failure, [] for an empty repo.
+    def fetch_file_tree
+      raise NotImplementedError
+    end
+
+    # A public raw-bytes URL for a repo-relative path, or nil when this host can't
+    # build one (file previews are GitHub-only for now).
+    def raw_url_for(_path)
+      nil
+    end
+
+    # A human-facing URL to view the file on the host, or nil.
+    def file_url_for(_path)
+      nil
+    end
+
     def fetch_languages
       nil
     end

@@ -91,6 +91,34 @@ module GitHost
       tree["tree"].filter_map { |node| node["path"] if node["type"] == "blob" }
     end
 
+    # Same tree as fetch_filenames but keeping each blob's byte size, so the file
+    # browser can show sizes and cap previews. Falls back to a clone when the tree
+    # API truncates.
+    def fetch_file_tree
+      return nil unless owner && repo
+
+      full_url = "#{api_base}/repos/#{owner}/#{repo}/git/trees/HEAD?recursive=1"
+      tree = http_get(full_url, headers: auth_headers)
+      return nil unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
+      return GitCli.new(repo_url).fetch_file_tree if tree["truncated"]
+
+      tree["tree"].filter_map do |node|
+        { path: node["path"], size: node["size"] } if node["type"] == "blob"
+      end
+    end
+
+    def raw_url_for(path)
+      return nil unless owner && repo && path.present?
+
+      "https://raw.githubusercontent.com/#{owner}/#{repo}/HEAD/#{encode_path(path)}"
+    end
+
+    def file_url_for(path)
+      return nil unless owner && repo && path.present?
+
+      "https://github.com/#{owner}/#{repo}/blob/HEAD/#{encode_path(path)}"
+    end
+
     def fetch_languages
       return nil unless owner && repo
 
@@ -138,6 +166,12 @@ module GitHost
     end
 
     private
+
+    # Percent-encode each path segment (spaces, unicode) without touching the
+    # separators, so "case/Kurokku case.step" builds a valid raw URL.
+    def encode_path(path)
+      path.to_s.split("/").map { |segment| ERB::Util.url_encode(segment) }.join("/")
+    end
 
     def use_proxy?
       ENV["GH_PROXY_API_KEY"].present?

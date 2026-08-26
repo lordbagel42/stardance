@@ -29,6 +29,16 @@ class Admin::Certification::HardwareReviewPolicy < ApplicationPolicy
     user&.can_review? && not_own_project?
   end
 
+  # The cockpit file-browser fragment is part of the review page.
+  def files?
+    show?
+  end
+
+  # The single-file preview fragment is part of the same file-browser card.
+  def file_preview?
+    show?
+  end
+
   # Same bar as Certification::ShipPolicy#report_fraud?: any reviewer may flag,
   # including on a project they belong to (the fraud report skips the own-project
   # guard on purpose). Flagging notifies the fraud team; it doesn't decide the

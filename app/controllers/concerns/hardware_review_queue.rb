@@ -72,8 +72,51 @@ module HardwareReviewQueue
 
   def show
     authorize_hardware_review(@project)
+    return render_hardware_cockpit if Flipper.enabled?(:new_hardware_gui, current_user)
+
     load_review_context
     render "admin/certification/hardware_reviews/show"
+  end
+
+  # Async payload for the cockpit file-browser card — the repo file tree + the
+  # rendered README. Split out of #show so the cockpit's first paint stays free
+  # of the GitHub/README HTTP; the card fetches this fragment on connect.
+  # Read-only, authorized like #show.
+  def files
+    authorize_hardware_review(@project)
+
+    @file_tree = cockpit_file_tree
+    result = ProjectReadmeFetcher.fetch(@project.readme_url)
+    @readme_html = readme_html_from(result, @project.readme_url)
+    @readme_error = result.error
+
+    render "admin/certification/hardware_reviews/new_gui/files_content", layout: false
+  end
+
+  # A single repo file rendered into the cockpit file-browser preview pane. The
+  # requested path must be a member of the (cached) repo tree — that both scopes
+  # the fetch to a real file in this project's repo and blocks path traversal /
+  # other-host URLs. Only text/markdown is fetched and rendered (size-capped);
+  # images load by URL in the browser; anything else shows a "binary / open on
+  # the host" placeholder with no server fetch. Read-only, authorized like #show.
+  def file_preview
+    authorize_hardware_review(@project)
+
+    path = params[:path].to_s
+    entry = cockpit_file_tree&.find { |node| node[:path] == path }
+    if entry.nil?
+      @preview = { type: :missing }
+      return render "admin/certification/hardware_reviews/new_gui/file_preview",
+                    layout: false, status: :not_found
+    end
+
+    @preview_path = path
+    @preview_kind = RepoFileKind.for(path)
+    host = GitHost::Base.for(@project.repo_url)
+    @preview_file_url = host&.file_url_for(path)
+    @preview = build_file_preview(host, entry, @preview_kind)
+
+    render "admin/certification/hardware_reviews/new_gui/file_preview", layout: false
   end
 
   # Flags the project for the fraud team. Reuses Project::Report's existing fraud
@@ -200,6 +243,16 @@ module HardwareReviewQueue
   end
 
   def load_review_context
+    load_cockpit_review_context
+    @lapse_timelapses = lapse_timelapses_for_review
+    @lookout_recordings = lookout_recordings_for_review
+  end
+
+  # The context the cockpit needs (minus the recordings HTTP fan-out, which the
+  # cockpit doesn't wire yet): the owner, the active review + its type, and the
+  # project's past reviews. Individual cockpit cards load anything extra they
+  # need on top of this.
+  def load_cockpit_review_context
     @funding_request = @project.latest_funding_request
     @ship = @project.latest_ship_review
     @owner = review_owner
@@ -214,9 +267,50 @@ module HardwareReviewQueue
       when ::Certification::FundingRequest then :funding
       when ::Certification::Ship then :ship
       end
+    # Drives the top-bar claim countdown — only meaningful while this reviewer
+    # actually holds the claim.
+    @claim_expires_at =
+      (@active_review.claim_expires_at if @active_review&.claim_held_by?(current_user))
     @past_reviews = past_reviews
-    @lapse_timelapses = lapse_timelapses_for_review
-    @lookout_recordings = lookout_recordings_for_review
+    # Devlogs card — eager-load attachments + blobs so the media galleries don't N+1.
+    @devlogs = @project.devlogs.with_attached_attachments.to_a
+    # Lapse timelapses bucketed into the devlog each was recorded during.
+    @devlog_timelapses = timelapses_by_devlog(@devlogs)
+  end
+
+  # Group the project's Lapse timelapses under the devlog whose work window they
+  # fall in (previous devlog's timestamp .. this devlog's timestamp). The newest
+  # devlog also absorbs any timelapses recorded since it, so nothing is hidden.
+  # There's no per-timelapse→devlog link upstream, so this is a time-window
+  # heuristic — good enough to show a reviewer which logs have footage.
+  def timelapses_by_devlog(devlogs)
+    return {} if devlogs.blank?
+
+    timelapses = cockpit_timelapses
+    return {} if timelapses.blank?
+
+    ascending = devlogs.sort_by(&:created_at)
+    ascending.each_with_index.to_h do |devlog, i|
+      lower = i.zero? ? Time.zone.at(0) : ascending[i - 1].created_at
+      upper = i == ascending.length - 1 ? nil : devlog.created_at
+      [ devlog.id, timelapses.select { |tl|
+        recorded = tl[:recorded_at]
+        recorded && recorded > lower && (upper.nil? || recorded <= upper)
+      } ]
+    end
+  end
+
+  # The project's Lapse timelapses (cached), each annotated with a Ruby Time.
+  # Never raises — LapseService returns [] on any failure.
+  def cockpit_timelapses
+    Rails.cache.fetch([ "hardware_cockpit_timelapses", @project.id ], expires_in: RECORDINGS_CACHE_TTL) do
+      LapseService.timelapses_for_project(
+        hackatime_user_id: review_owner&.hackatime_identity&.uid,
+        project_keys: @project.hackatime_keys
+      ).map do |tl|
+        tl.merge(recorded_at: (Time.zone.at(tl[:createdAt].to_i / 1000) if tl[:createdAt].present?))
+      end
+    end
   end
 
   # Every decided funding request and ship for this project, newest first. The
@@ -398,9 +492,68 @@ module HardwareReviewQueue
     end
   end
 
+  # ── Cockpit file browser ───────────────────────────────────────────────────
+
+  # Bytes we're willing to fetch + render inline; larger text files show a
+  # placeholder instead. Images load by URL (no server fetch), so this doesn't
+  # bound them.
+  PREVIEW_MAX_BYTES = 512 * 1024
+
+  # Short cache so repeated file-browser hits (and every preview click, which
+  # validates the path against this tree) don't re-hit the git host.
+  FILE_TREE_CACHE_TTL = 5.minutes
+
+  # [{ path:, size: }] for the repo, nil on fetch failure, [] for an empty repo.
+  def cockpit_file_tree
+    return @cockpit_file_tree if defined?(@cockpit_file_tree)
+
+    @cockpit_file_tree = Rails.cache.fetch([ "hardware_cockpit_file_tree", @project.id ], expires_in: FILE_TREE_CACHE_TTL) do
+      GitHost::Base.for(@project.repo_url)&.fetch_file_tree
+    end
+  end
+
+  # Render fetched README/markdown through the sanitizing pipeline + link/image
+  # rewriter. Shared by the README default and the markdown file preview.
+  def readme_html_from(result, url)
+    return if result.markdown.blank?
+
+    html = MarkdownRenderer.render(result.markdown)
+    ReadmeHtmlRewriter.rewrite(html: html, readme_url: url, click_to_load: false)
+  end
+
+  def build_file_preview(host, entry, kind)
+    raw_url = host&.raw_url_for(entry[:path])
+
+    return { type: :unsupported } if raw_url.blank?
+    return { type: :binary, size: entry[:size] } if kind.preview == :none
+    return { type: :image, src: raw_url } if kind.preview == :image
+    return { type: :too_large, size: entry[:size] } if entry[:size].to_i > PREVIEW_MAX_BYTES
+
+    result = ProjectReadmeFetcher.fetch(raw_url)
+    return { type: :error, message: result.error } if result.error
+
+    if kind.preview == :markdown
+      { type: :markdown, html: readme_html_from(result, raw_url) }
+    else
+      { type: :code, body: result.markdown }
+    end
+  end
+
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class
   # zeroes the body's own sidebar margin so the two don't stack into a huge gap.
   def set_body_class
     @body_class = "app-layout-page"
+  end
+
+  # The :new_hardware_gui reviewer cockpit — a full-screen 3-column redesign of
+  # the review page. Static skeleton for now, so it deliberately skips
+  # load_review_context (and its Lapse/Lookout HTTP fan-out): every panel is a
+  # placeholder. Hiding the sidebar/footer gives the cockpit the whole viewport.
+  def render_hardware_cockpit
+    @hide_sidebar = true
+    @hide_footer = true
+    @body_class = "hardware-cockpit-page"
+    load_cockpit_review_context
+    render "admin/certification/hardware_reviews/new_gui/cockpit"
   end
 end
