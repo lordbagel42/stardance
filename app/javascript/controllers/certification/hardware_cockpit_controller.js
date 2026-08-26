@@ -77,16 +77,18 @@ export default class extends Controller {
       if (event.key === "Escape") return this.consume(event, () => this.closeLightbox());
       // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
       if (this.lbVideo) {
+        if (event.code === "Space") return this.consume(event, () => this.togglePlay());
         if (event.code === "KeyJ") return this.consume(event, () => this.nudgeRate(-1));
         if (event.code === "KeyK") return this.consume(event, () => this.togglePlay());
         if (event.code === "KeyL") return this.consume(event, () => this.nudgeRate(1));
-        if (event.key === "ArrowLeft") return this.consume(event, () => this.stepVideo(event.shiftKey ? -10 : -1));
+        // vim: h mirrors ← scrub (→'s vim key `l` is taken by forward-transport).
+        if (event.key === "ArrowLeft" || event.code === "KeyH") return this.consume(event, () => this.stepVideo(event.shiftKey ? -10 : -1));
         if (event.key === "ArrowRight") return this.consume(event, () => this.stepVideo(event.shiftKey ? 10 : 1));
         return;
       }
-      // Images → prev/next.
-      if (event.key === "ArrowLeft") return this.consume(event, () => this.stepLightbox(-1));
-      if (event.key === "ArrowRight") return this.consume(event, () => this.stepLightbox(1));
+      // Images → prev/next (vim h/l mirror ←/→).
+      if (event.key === "ArrowLeft" || event.code === "KeyH") return this.consume(event, () => this.stepLightbox(-1));
+      if (event.key === "ArrowRight" || event.code === "KeyL") return this.consume(event, () => this.stepLightbox(1));
       return;
     }
 
@@ -103,10 +105,15 @@ export default class extends Controller {
     // Ctrl combos are safe even while typing — they never insert text.
     if (ctrl && event.code === "Space") return this.consume(event, () => this.focusDevlogs());
     if (ctrl && event.key === "Enter") return this.consume(event, () => this.focusFeedback());
-    if (ctrl && event.key === "ArrowDown") return this.consume(event, () => this.stepDevlog(1));
-    if (ctrl && event.key === "ArrowUp") return this.consume(event, () => this.stepDevlog(-1));
+    if (ctrl && (event.key === "ArrowDown" || event.code === "KeyJ")) return this.consume(event, () => this.stepDevlog(1));
+    if (ctrl && (event.key === "ArrowUp" || event.code === "KeyK")) return this.consume(event, () => this.stepDevlog(-1));
     if (ctrl && event.code === "KeyP") return this.consume(event, () => this.armVerdict("approve"));
     if (ctrl && event.code === "KeyE") return this.consume(event, () => this.armVerdict("return"));
+    // ctrl+shift+N opens the Nth recording on the current devlog (1-based; 0 = 10th).
+    if (ctrl && event.shiftKey) {
+      const n = this.digitIndex(event.code);
+      if (n !== null) return this.consume(event, () => this.openTimelapse(n));
+    }
 
     // Single-key shortcuts must not fight text entry.
     if (ctrl || this.isTyping(event.target)) return;
@@ -114,8 +121,11 @@ export default class extends Controller {
     if (event.shiftKey && event.code === "KeyD") return this.consume(event, () => this.scrollToDevlogPart("body"));
     if (event.shiftKey && event.code === "KeyI") return this.consume(event, () => this.scrollToDevlogPart("gallery"));
     if (event.shiftKey && event.code === "KeyT") return this.consume(event, () => this.openTimelapse());
-    const image = { Digit1: 0, Digit2: 1, Digit3: 2 }[event.code];
-    if (event.shiftKey && image !== undefined) return this.consume(event, () => this.openImage(image));
+    // shift+1..9 open images 1..9; shift+0 opens the 10th.
+    if (event.shiftKey) {
+      const img = this.digitIndex(event.code);
+      if (img !== null) return this.consume(event, () => this.openImage(img));
+    }
   }
 
   consume(event, fn) {
@@ -126,6 +136,14 @@ export default class extends Controller {
   isTyping(el) {
     if (!el) return false;
     return ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.isContentEditable;
+  }
+
+  // Maps a DigitN keydown to a 0-based index: 1→0 … 9→8, 0→9 (the 10th). null otherwise.
+  digitIndex(code) {
+    const m = /^Digit(\d)$/.exec(code);
+    if (!m) return null;
+    const n = Number(m[1]);
+    return n === 0 ? 9 : n - 1;
   }
 
   // ── Devlog navigation ────────────────────────────────────────────────────
@@ -244,12 +262,12 @@ export default class extends Controller {
     if (items.length && index < items.length) this.showLightbox(items, index);
   }
 
-  openTimelapse() {
+  openTimelapse(index = 0) {
     const devlog = this.currentDevlogEl();
     if (!devlog) return;
     const items = Array.from(devlog.querySelectorAll(".hardware-cockpit__timelapse"))
       .map((a) => ({ type: "video", src: a.href }));
-    if (items.length) this.showLightbox(items, 0);
+    if (items.length && index < items.length) this.showLightbox(items, index);
   }
 
   // Clicking a timelapse tile opens it in the JKL lightbox instead of navigating
@@ -273,7 +291,9 @@ export default class extends Controller {
     box.className = "hardware-cockpit__lightbox";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-modal", "true");
-    box.addEventListener("click", (e) => { if (e.target === box) this.closeLightbox(); });
+    // Backdrop click closes an image lightbox; for video it doesn't — so clicking
+    // near the player (to pause) never closes it. Use × or esc to close a video.
+    box.addEventListener("click", (e) => { if (e.target === box && !this.lbVideo) this.closeLightbox(); });
 
     const close = document.createElement("button");
     close.type = "button";

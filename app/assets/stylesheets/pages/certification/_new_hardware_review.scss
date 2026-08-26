@@ -270,10 +270,8 @@
     height: 7rem;
   }
 
-  &__card--notes {
-    height: 16.5rem;
-    overflow-y: auto;
-  }
+  // Notes card has no fixed height / inner scroll — it grows with its content and
+  // the whole review region scrolls instead.
 
   // ── Shared cards / panels ─────────────────────────────────────────────────
   &__config-bar,
@@ -930,30 +928,39 @@
     border-radius: var(--profile-radius);
   }
 
+  // Reads like a BOM: a calm sticky header (mint underline, not a mint fill),
+  // zebra rows, an emphasized first column (ref/item), tabular figures.
   &__csv {
+    min-width: 100%;
     border-collapse: collapse;
     font-size: var(--font-size-xs);
     font-variant-numeric: tabular-nums;
 
     th,
     td {
-      padding: var(--space-xxs) var(--space-xs);
+      padding: var(--space-xxs) var(--space-s);
       text-align: left;
       white-space: nowrap;
       border-bottom: 1px solid var(--color-space-border);
-      border-right: 1px solid var(--color-space-border);
     }
 
     th {
       position: sticky;
       top: 0;
+      z-index: 1;
       font-weight: 700;
-      color: var(--color-set-1-bg);
-      background: var(--color-brand-mint);
+      color: var(--color-space-text);
+      background: var(--color-space-surface-strong);
+      border-bottom: 2px solid var(--color-brand-mint);
+    }
+
+    td:first-child {
+      font-weight: 600;
+      color: var(--color-space-text);
     }
 
     tr:nth-child(even) td {
-      background: var(--color-space-surface-faint);
+      background: var(--color-overlay-light-soft);
     }
   }
 
