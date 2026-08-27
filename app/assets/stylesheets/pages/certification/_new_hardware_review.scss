@@ -253,8 +253,6 @@
   &__card--history {
     align-self: stretch;
     min-height: 16.5rem;
-    // Nudged down slightly so it doesn't sit flush under the project/feedback row.
-    margin-top: var(--space-s);
   }
 
   &__history-scroll {
