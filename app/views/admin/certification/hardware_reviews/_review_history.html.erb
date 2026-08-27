@@ -1,20 +1,26 @@
 <%# The project's past hardware reviews (design funding + build ships), newest
     first. Shared by the classic review page and the :new_hardware_gui cockpit.
-    Expects @active_review and @past_reviews (see HardwareReviewQueue).
-
-    A disputed flag rewinds the review to pending in place, so it never lands in
-    @past_reviews. Surface it here or the next reviewer picks the project up with
-    no idea it has already been round this loop. %>
+    Expects @active_review, @active_review_type and @past_reviews (see
+    HardwareReviewQueue); @undo_review / @undo_preflight drive the undo control
+    on the newest decided review when the viewer may reverse it. %>
+<%# A disputed flag rewinds the review to pending in place, so it never
+    lands in @past_reviews. Surface it here or the next reviewer picks
+    the project up with no idea it has already been round this loop. %>
 <% bounced = @active_review&.previously_misfiled? %>
 <% if bounced %>
   <div class="hardware-review__history-item hardware-review__history-item--bounced">
     <div class="hardware-review__history-head">
       <span class="hardware-review__timeline-label">This review</span>
-      <span class="status-pill status-pill--misfiled">Sent back once</span>
-      <span class="hardware-review__timeline-meta">
-        A reviewer flagged this as the wrong queue and the builder disagreed.
-      </span>
+      <%= render "admin/certification/hardware_reviews/wrong_queue_flag", review: @active_review %>
+      <% if @active_review_type == :funding %>
+        <span class="hardware-review__timeline-meta">
+          $<%= @active_review.requested_amount_dollars %> · <%= @active_review.tier_label %>
+        </span>
+      <% end %>
     </div>
+    <p class="hardware-review__history-feedback">
+      The builder disagreed, so it's back in this queue for review.
+    </p>
     <% if @active_review.internal_reason.present? %>
       <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
         Reviewer note: <%= @active_review.internal_reason %>
@@ -30,16 +36,22 @@
       <li class="hardware-review__history-item">
         <div class="hardware-review__history-head">
           <span class="hardware-review__timeline-label"><%= is_funding ? "Design funding" : "Build certification" %></span>
-          <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
-          <span class="hardware-review__timeline-meta">
-            <%# A routing correction has no verdict to report, so it says
-                what happened to it instead of an amount or a kit. %>
-            <% if review.misfiled? %>
-              Wrong queue, waiting on the builder
-            <% elsif review.withdrawn? %>
-              Withdrawn, wrong queue
-            <% elsif is_funding %>
-              <% if review.awards_design_kit? %>
+          <%# A reversed review keeps its history slot but wears a
+              "Reversed" badge instead of its (now rewound) verdict. %>
+          <% if review.reversed_at.present? %>
+            <span class="status-pill status-pill--reversed">Reversed</span>
+          <% else %>
+            <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+          <% end %>
+          <%# The submitted facts a normal review shows - amount and tier -
+              carry on a wrong-queue row too, which reports the submitted
+              request rather than a verdict it never reached; a reversed
+              review shows the rewound verdict value instead. %>
+          <% if is_funding %>
+            <span class="hardware-review__timeline-meta">
+              <% if (review.misfiled? || review.withdrawn?) && review.reversed_at.blank? %>
+                $<%= review.requested_amount_dollars %> · <%= review.tier_label %>
+              <% elsif review.awards_design_kit? %>
                 <%= review.design_kit_shop_item&.name || "Kit" %>
               <% elsif review.kit_mission? %>
                 No kit
@@ -48,13 +60,27 @@
               <% else %>
                 $<%= review.final_amount_dollars %> · <%= review.tier_label %>
               <% end %>
-            <% end %>
-          </span>
-          <% if review.decided_at %>
-            <span class="hardware-review__timeline-meta"><%= l(review.decided_at.to_date, format: :short) %></span>
+            </span>
+          <% end %>
+          <%# The verdict date; for a reversal, when it was reversed; for a
+              routing correction that never reached a verdict, the flag date. %>
+          <% review_date = review.reversed_at || review.decided_at || review.misfiling_flag&.dig(:at) %>
+          <% if review_date %>
+            <span class="hardware-review__timeline-meta"><%= "reversed " if review.reversed_at %><%= l(review_date.to_date, format: :short) %></span>
           <% end %>
           <% if review.reviewer %>
             <span class="hardware-review__timeline-meta">by <%= review.reviewer.display_name %></span>
+          <% end %>
+          <% if review.misfiled? && review.reversed_at.blank? %>
+            <span class="hardware-review__timeline-meta">Wrong queue, waiting on the builder</span>
+          <% elsif review.withdrawn? && review.reversed_at.blank? %>
+            <span class="hardware-review__timeline-meta">Withdrawn, wrong queue</span>
+          <% end %>
+          <%# A verdict on a review that had been sent back once as the
+              wrong queue merges the earlier flag into this one card,
+              rather than losing that history the moment it's decided. %>
+          <% if review.decided? && review.previously_misfiled? %>
+            <%= render "admin/certification/hardware_reviews/wrong_queue_flag", review: review %>
           <% end %>
         </div>
         <% if review.feedback.present? %>
@@ -63,10 +89,19 @@
         <% if is_funding %>
           <%= render "admin/certification/funding_requests/feedback_images", funding_request: review %>
         <% end %>
-        <% if review.internal_reason.present? %>
+        <%# internal_reason is the wrong-queue note; surface it only while the
+            review is still in a routing state (misfiled/withdrawn), never as a
+            stale note merged onto a real verdict (approved/returned). %>
+        <% if review.internal_reason.present? && !review.decided? %>
           <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
             Reviewer note: <%= review.internal_reason %>
           </p>
+        <% end %>
+        <%# Only the newest decided review is reversible; the controller
+            sets @undo_review to it and @undo_preflight to its ledger. %>
+        <% if @undo_review && review == @undo_review && @undo_preflight %>
+          <%= render "admin/certification/hardware_reviews/undo_review",
+                review: review, preflight: @undo_preflight %>
         <% end %>
       </li>
     <% end %>

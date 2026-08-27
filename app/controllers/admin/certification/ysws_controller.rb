@@ -136,8 +136,23 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     @lapse_timelapses = lapse_timelapses_for_ysws_review
     @lookout_recordings = lookout_recordings_for_ysws_review
+    # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
+    @lapse_owner_uid = @review.project.memberships.owner.first&.user&.hackatime_identity&.uid
 
     @devlog_windows = devlog_windows_for_review(@review)
+    # Attach each recording to the devlog whose time window it was recorded in, so
+    # a reviewer sees the footage that produced a devlog's logged time right beside
+    # it. The top gallery still lists every recording. Lapse and Lookout bucket the
+    # same way; both appear in the per-devlog section (only Lapse links to
+    # Telescreen — it has no Lookout workbench).
+    @devlog_lapses = ::Certification::DevlogRecordingBucketer.call(
+      recordings: @lapse_timelapses,
+      windows:    @devlog_windows
+    )
+    @devlog_lookouts = ::Certification::DevlogRecordingBucketer.call(
+      recordings: @lookout_recordings,
+      windows:    @devlog_windows
+    )
     @devlog_commits = begin
       load_commits_with_stats(
         @devlog_windows,
