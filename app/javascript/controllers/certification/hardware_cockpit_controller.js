@@ -19,6 +19,7 @@ export default class extends Controller {
     this.startCountdown();
     this.currentDevlog = 0;
     this.armed = null;
+    this.observeDevlogScroll();
   }
 
   disconnect() {
@@ -27,6 +28,7 @@ export default class extends Controller {
     this.stopCountdown();
     this.closeLightbox();
     this.clearArm();
+    this.devlogObserver?.disconnect();
   }
 
   // ── Contextual shortcut bar ──────────────────────────────────────────────
@@ -166,12 +168,43 @@ export default class extends Controller {
   setDevlog(index) {
     const els = this.devlogEls();
     if (!els.length) return;
-    this.currentDevlog = Math.max(0, Math.min(index, els.length - 1));
-    els.forEach((el, i) => el.classList.toggle("is-current", i === this.currentDevlog));
+    this.markCurrentDevlog(index);
     // Align the current devlog to the top of the column so it doesn't ride the
     // bottom edge once the list has scrolled (scroll-margin-top gives it breathing
     // room below the config bar).
     els[this.currentDevlog].scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
+  // Set the current devlog WITHOUT scrolling — used by both keyboard nav (which
+  // then scrolls) and the scroll observer (which must not).
+  markCurrentDevlog(index) {
+    const els = this.devlogEls();
+    if (!els.length) return;
+    this.currentDevlog = Math.max(0, Math.min(index, els.length - 1));
+    els.forEach((el, i) => el.classList.toggle("is-current", i === this.currentDevlog));
+  }
+
+  // Track the top-most visible devlog so the media shortcuts (shift+num / shift+T
+  // / ctrl+shift+N / shift+D·I) act on the devlog you've SCROLLED to, not only the
+  // one ctrl+j/k last moved to. The bottom -70% margin makes "current" mean
+  // "sitting in the top band of the column."
+  observeDevlogScroll() {
+    const scroller = this.element.querySelector(".hardware-cockpit__devlogs");
+    if (!scroller || typeof IntersectionObserver === "undefined") return;
+    this.visibleDevlogs = new Set();
+    this.devlogObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) this.visibleDevlogs.add(entry.target);
+        else this.visibleDevlogs.delete(entry.target);
+      }
+      const els = this.devlogEls();
+      const topMost = els.find((el) => this.visibleDevlogs.has(el)); // DOM order = visual order
+      if (topMost) {
+        const idx = els.indexOf(topMost);
+        if (idx !== this.currentDevlog) this.markCurrentDevlog(idx);
+      }
+    }, { root: scroller, rootMargin: "0px 0px -70% 0px", threshold: 0 });
+    this.devlogEls().forEach((el) => this.devlogObserver.observe(el));
   }
 
   // Reorder the devlog cards by timestamp (newest/oldest), driven by the config
@@ -257,11 +290,20 @@ export default class extends Controller {
   }
 
   // ── Lightbox for devlog images + timelapses ──────────────────────────────
+  // Collect gallery slides in carousel order (images AND videos) so shift+num
+  // lines up with the carousel dots and gallery videos are keyboard-openable too.
+  // Non-previewable file slides are skipped.
   openImage(index) {
     const devlog = this.currentDevlogEl();
     if (!devlog) return;
-    const items = Array.from(devlog.querySelectorAll(".feed-post-card__image"))
-      .map((img) => ({ type: "image", src: img.currentSrc || img.src, alt: img.alt }));
+    const items = Array.from(devlog.querySelectorAll(".feed-post-card__media-slide"))
+      .map((slide) => {
+        const video = slide.querySelector("video");
+        if (video) return { type: "video", src: video.currentSrc || video.src };
+        const img = slide.querySelector("img");
+        return img ? { type: "image", src: img.currentSrc || img.src, alt: img.alt || "" } : null;
+      })
+      .filter((item) => item && item.src);
     if (items.length && index < items.length) this.showLightbox(items, index);
   }
 
