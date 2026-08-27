@@ -5,8 +5,11 @@
 # render it. Extension-driven, with a couple of path-based rules for gerber output.
 class RepoFileKind
   Kind = Data.define(:key, :label, :preview)
-  # preview is one of: :markdown, :code, :image, :none (binary / not previewable)
+  # preview is one of: :markdown, :code, :csv, :image, :model (3D), :none
 
+  # CAD formats the 3D preview pane can actually render (STL mesh + STEP via the
+  # OpenCASCADE WASM). The rest of CAD stays :none.
+  MODEL_3D = %w[stl step stp].freeze
   CAD      = %w[step stp stl f3d 3mf iges igs obj scad sldprt sldasm ipt catpart dxf dwg].freeze
   KICAD    = %w[kicad_pcb kicad_sch kicad_pro sch brd net lib].freeze
   GERBER   = %w[gbr ger gbl gtl gto gts gbs gko gm1 gpi drl xln nc].freeze
@@ -35,6 +38,7 @@ class RepoFileKind
       when "md", "markdown" then [ "doc", "DOC", :markdown ]
       when "csv", "tsv"     then [ "data", "CSV", :csv ]
       when *IMAGE           then [ "img", "IMG", :image ]
+      when *MODEL_3D        then [ "cad", ext == "stl" ? "STL" : "STEP", :model ]
       when *CAD             then [ "cad", "CAD", :none ]
       when *KICAD           then [ "kicad", "KICAD", :none ]
       when *FIRMWARE        then [ "fw", "FW", :code ]

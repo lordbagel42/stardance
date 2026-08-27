@@ -37,6 +37,9 @@ application.register("certification--hardware-cockpit", Certification__HardwareC
 import Certification__HardwareFileBrowserController from "./certification/hardware_file_browser_controller"
 application.register("certification--hardware-file-browser", Certification__HardwareFileBrowserController)
 
+import Certification__ModelViewerController from "./certification/model_viewer_controller"
+application.register("certification--model-viewer", Certification__ModelViewerController)
+
 import Certification__QueueController from "./certification/queue_controller"
 application.register("certification--queue", Certification__QueueController)
 

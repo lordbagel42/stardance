@@ -1319,6 +1319,7 @@
   }
 
   &__lightbox-stage {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1337,6 +1338,138 @@
     margin: 0;
     font-size: var(--font-size-s);
     color: var(--color-space-text-muted);
+  }
+
+  // ── Custom video player chrome (overlays the bottom of the video) ─────────
+  &__player {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-l) var(--space-m) var(--space-s);
+    border-radius: 0 0 var(--profile-radius) var(--profile-radius);
+    background: linear-gradient(to top, rgba(8, 6, 30, 0.94) 30%, rgba(8, 6, 30, 0));
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+
+    // Fade the chrome in only when the pointer is over the video.
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &__lightbox-stage:hover &__player,
+  &__player:focus-within {
+    opacity: 1;
+  }
+
+  &__player-btn {
+    flex: 0 0 auto;
+    min-width: 2.1rem;
+    padding: var(--space-xxs) var(--space-xs);
+    border-radius: var(--radius-s, 6px);
+    background: var(--color-overlay-light-soft);
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    line-height: 1;
+
+    &:hover {
+      background: var(--color-overlay-light-strong);
+    }
+  }
+
+  &__player-scrub {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--color-overlay-light-soft);
+    cursor: pointer;
+  }
+
+  &__player-progress {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background: var(--color-brand-mint);
+  }
+
+  &__player-time {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-cream);
+  }
+
+  &__player-speed {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+
+  &__player-pill {
+    padding: 2px 6px;
+    border-radius: var(--radius-s, 6px);
+    background: transparent;
+    color: var(--color-brand-blue);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.5;
+
+    &:hover {
+      opacity: 0.85;
+    }
+
+    &.is-active {
+      background: var(--color-brand-mint);
+      color: var(--color-space-bg);
+      font-weight: 700;
+      opacity: 1;
+    }
+  }
+
+  // ── 3D model preview (STL / STEP via three.js) ───────────────────────────
+  &__model {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 24rem;
+    height: 100%;
+  }
+
+  &__model-canvas {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 24rem;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__model-status,
+  &__model-hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-xs);
+    pointer-events: none;
+  }
+
+  &__model-status {
+    top: 50%;
+  }
+
+  &__model-hint {
+    bottom: var(--space-s);
+    opacity: 0.55;
   }
 }
 

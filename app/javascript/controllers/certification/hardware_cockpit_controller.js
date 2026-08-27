@@ -321,14 +321,7 @@ export default class extends Controller {
     this.stopReverse();
     this.lbStage.innerHTML = "";
     if (item.type === "video") {
-      const video = document.createElement("video");
-      Object.assign(video, { src: item.src, controls: true, autoplay: true, playsInline: true });
-      video.className = "hardware-cockpit__lightbox-media";
-      this.lbStage.appendChild(video);
-      this.lbVideo = video;
-      this.rate = 1;      // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
-      this.lastRate = 1;  // K resumes here after a pause
-      this.updatePlayerCaption();
+      this.mountVideoPlayer(item);
     } else {
       const img = document.createElement("img");
       img.src = item.src;
@@ -339,6 +332,113 @@ export default class extends Controller {
       const nav = this.lbItems.length > 1 ? " · ←/→" : "";
       this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length}${nav} · esc to close`;
     }
+  }
+
+  // ── Custom player chrome ─────────────────────────────────────────────────
+  // Native controls are off so the transport has one look: a scrubber, a
+  // play/pause + frame-step cluster, and a visual JKL speed ladder. Every
+  // control calls the same methods the keyboard does, so the two stay in sync.
+  mountVideoPlayer(item) {
+    const video = document.createElement("video");
+    Object.assign(video, { src: item.src, controls: false, autoplay: true, playsInline: true });
+    video.className = "hardware-cockpit__lightbox-media";
+    video.addEventListener("click", (event) => { event.stopPropagation(); this.togglePlay(); });
+    video.addEventListener("loadedmetadata", () => this.syncPlayerUI());
+    video.addEventListener("timeupdate", () => this.syncPlayerUI());
+    video.addEventListener("ended", () => this.applyRate(0));
+    this.lbVideo = video;
+    this.rate = 1;      // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
+    this.lastRate = 1;  // K resumes here after a pause
+
+    this.lbStage.append(video, this.buildPlayerBar());
+    this.syncPlayerUI();
+  }
+
+  buildPlayerBar() {
+    const bar = document.createElement("div");
+    bar.className = "hardware-cockpit__player";
+
+    this.lbPlayBtn = this.playerButton("❚❚", "Play / pause · k or space", () => this.togglePlay());
+    const back = this.playerButton("⟨", "Step back 1s · ← / h (shift = 10s)", () => this.stepVideo(-1));
+    const fwd = this.playerButton("⟩", "Step forward 1s · → (shift = 10s)", () => this.stepVideo(1));
+
+    const scrub = document.createElement("div");
+    scrub.className = "hardware-cockpit__player-scrub";
+    this.lbProgress = document.createElement("div");
+    this.lbProgress.className = "hardware-cockpit__player-progress";
+    scrub.appendChild(this.lbProgress);
+    scrub.addEventListener("pointerdown", (event) => this.scrubFrom(event, scrub));
+
+    this.lbTime = document.createElement("span");
+    this.lbTime.className = "hardware-cockpit__player-time";
+
+    const speed = document.createElement("div");
+    speed.className = "hardware-cockpit__player-speed";
+    this.lbSpeedPills = this.RATE_LADDER.map((r) => {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "hardware-cockpit__player-pill";
+      pill.textContent = r < 0 ? `${-r}◀` : `${r}▶`;
+      pill.title = `${r < 0 ? "reverse" : "forward"} ${Math.abs(r)}× · j / l`;
+      pill.addEventListener("click", () => this.applyRate(r));
+      speed.appendChild(pill);
+      return pill;
+    });
+
+    bar.append(this.lbPlayBtn, back, scrub, fwd, this.lbTime, speed);
+    return bar;
+  }
+
+  playerButton(label, title, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hardware-cockpit__player-btn";
+    button.title = title;
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
+  // Click / drag anywhere on the track to seek (pauses first, like a scrub).
+  scrubFrom(event, track) {
+    const seek = (clientX) => {
+      if (!this.lbVideo?.duration) return;
+      const rect = track.getBoundingClientRect();
+      const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      this.applyRate(0);
+      this.lbVideo.currentTime = frac * this.lbVideo.duration;
+      this.syncPlayerUI();
+    };
+    seek(event.clientX);
+    const move = (e) => seek(e.clientX);
+    const up = () => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  }
+
+  syncPlayerUI() {
+    if (!this.lbVideo) return;
+    const video = this.lbVideo;
+    if (this.lbPlayBtn) this.lbPlayBtn.textContent = this.rate ? "❚❚" : "▶";
+    if (this.lbProgress && video.duration) {
+      this.lbProgress.style.width = `${(video.currentTime / video.duration) * 100}%`;
+    }
+    if (this.lbTime) this.lbTime.textContent = `${this.fmtTime(video.currentTime)} / ${this.fmtTime(video.duration)}`;
+    this.lbSpeedPills?.forEach((pill, i) => pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate));
+    if (this.lbCaption) {
+      this.lbCaption.textContent =
+        `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s) · esc to close`;
+    }
+  }
+
+  fmtTime(seconds) {
+    if (!isFinite(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
   }
 
   // ── Premiere-style JKL transport ─────────────────────────────────────────
@@ -383,7 +483,7 @@ export default class extends Controller {
     } else {
       this.lbVideo.pause();
     }
-    this.updatePlayerCaption();
+    this.syncPlayerUI();
   }
 
   startReverse() {
@@ -410,16 +510,7 @@ export default class extends Controller {
     this.applyRate(0); // frame-scrub pauses first
     const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
     this.lbVideo.currentTime = Math.max(0, Math.min(max, this.lbVideo.currentTime + seconds));
-    this.updatePlayerCaption();
-  }
-
-  updatePlayerCaption() {
-    if (!this.lbVideo || !this.lbCaption) return;
-    const mode = this.rate > 0 ? `▶ ${this.rate}×`
-      : this.rate < 0 ? `◀ ${-this.rate}×`
-      : "❚❚ paused";
-    this.lbCaption.textContent =
-      `${this.lbIndex + 1} / ${this.lbItems.length} · ${mode} · J/K/L · ←/→ scrub (shift = 10s) · esc`;
+    this.syncPlayerUI();
   }
 
   stepLightbox(direction) {

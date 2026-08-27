@@ -8,8 +8,17 @@ class RepoFileKindTest < ActiveSupport::TestCase
     assert_equal :markdown, kind("docs/guide.md").preview
   end
 
-  test "CAD models are a non-previewable CAD badge" do
-    %w[case/part.step body.f3d bracket.stl model.3mf].each do |path|
+  test "renderable CAD (STL/STEP) previews as a 3D model" do
+    %w[bracket.stl case/part.step body.stp].each do |path|
+      assert_equal :model, kind(path).preview, path
+    end
+    assert_equal "STL", kind("bracket.stl").label
+    assert_equal "STEP", kind("case/part.step").label
+    assert_equal "STEP", kind("body.stp").label
+  end
+
+  test "non-renderable CAD stays a plain, non-previewable CAD badge" do
+    %w[body.f3d model.3mf assembly.iges sketch.dxf part.sldprt].each do |path|
       assert_equal "CAD", kind(path).label, path
       assert_equal :none, kind(path).preview, path
     end

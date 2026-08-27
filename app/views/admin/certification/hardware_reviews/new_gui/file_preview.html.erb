@@ -47,6 +47,18 @@
     <%= image_tag @preview[:src], alt: @preview_path, loading: "lazy", referrerpolicy: "no-referrer" %>
   </div>
 
+<% when :model %>
+  <div class="hardware-cockpit__model"
+       data-controller="certification--model-viewer"
+       data-certification--model-viewer-src-value="<%= @preview[:src] %>"
+       data-certification--model-viewer-format-value="<%= @preview[:format] %>"
+       data-certification--model-viewer-bundle-url-value="<%= asset_path("model_viewer_bundle.js") %>"
+       data-certification--model-viewer-wasm-url-value="<%= asset_path("occt-import-js.wasm") %>">
+    <canvas class="hardware-cockpit__model-canvas" data-certification--model-viewer-target="canvas"></canvas>
+    <p class="hardware-cockpit__model-status" data-certification--model-viewer-target="status">Loading 3D model…</p>
+    <p class="hardware-cockpit__model-hint">drag to orbit · scroll to zoom · right-drag to pan</p>
+  </div>
+
 <% else %>
   <div class="hardware-cockpit__preview-empty">
     <p class="hardware-cockpit__files-note">

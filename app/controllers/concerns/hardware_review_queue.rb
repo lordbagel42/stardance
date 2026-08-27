@@ -86,7 +86,7 @@ module HardwareReviewQueue
     authorize_hardware_review(@project)
 
     @file_tree = cockpit_file_tree
-    result = ProjectReadmeFetcher.fetch(@project.readme_url)
+    result = cached_repo_fetch(@project.readme_url)
     @readme_html = readme_html_from(result, @project.readme_url)
     @readme_error = result.error
 
@@ -526,6 +526,10 @@ module HardwareReviewQueue
   # validates the path against this tree) don't re-hit the git host.
   FILE_TREE_CACHE_TTL = 5.minutes
 
+  # Same window for the raw-content fetches (README + file previews) so opening a
+  # review — or re-opening the same file — doesn't re-hit the raw CDN each time.
+  REPO_FETCH_CACHE_TTL = 5.minutes
+
   # [{ path:, size: }] for the repo, nil on fetch failure, [] for an empty repo.
   def cockpit_file_tree
     return @cockpit_file_tree if defined?(@cockpit_file_tree)
@@ -533,6 +537,20 @@ module HardwareReviewQueue
     @cockpit_file_tree = Rails.cache.fetch([ "hardware_cockpit_file_tree", @project.id ], expires_in: FILE_TREE_CACHE_TTL) do
       GitHost::Base.for(@project.repo_url)&.fetch_file_tree
     end
+  end
+
+  # ProjectReadmeFetcher.fetch, cached per project + url. Only successful fetches
+  # are stored — an error result falls through so a transient failure isn't sticky.
+  def cached_repo_fetch(url)
+    return ProjectReadmeFetcher.fetch(url) if url.blank?
+
+    key = [ "hardware_cockpit_repo_fetch", @project.id, url ]
+    cached = Rails.cache.read(key)
+    return cached if cached
+
+    result = ProjectReadmeFetcher.fetch(url)
+    Rails.cache.write(key, result, expires_in: REPO_FETCH_CACHE_TTL) if result.error.nil?
+    result
   end
 
   # Render fetched README/markdown through the sanitizing pipeline + link/image
@@ -550,9 +568,12 @@ module HardwareReviewQueue
     return { type: :unsupported } if raw_url.blank?
     return { type: :binary, size: entry[:size] } if kind.preview == :none
     return { type: :image, src: raw_url } if kind.preview == :image
+    # 3D models load straight from the raw URL client-side (the viewer streams
+    # them into three.js), so they skip the server fetch + the inline byte cap.
+    return { type: :model, src: raw_url, format: File.extname(entry[:path]).delete_prefix(".").downcase } if kind.preview == :model
     return { type: :too_large, size: entry[:size] } if entry[:size].to_i > PREVIEW_MAX_BYTES
 
-    result = ProjectReadmeFetcher.fetch(raw_url)
+    result = cached_repo_fetch(raw_url)
     return { type: :error, message: result.error } if result.error
 
     case kind.preview

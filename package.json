@@ -5,7 +5,7 @@
     "node": ">=18 <=25"
   },
   "scripts": {
-    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets"
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets --loader:.wasm=file --asset-names='[name]' --external:path --external:fs --external:crypto --external:url --external:module --external:worker_threads --external:os --external:perf_hooks"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -21,6 +21,8 @@
     "emoji-mart": "^5.6.0",
     "gsap": "^3.15.0",
     "mjml": "^5.4.0",
+    "occt-import-js": "^0.0.23",
+    "three": "^0.160.0",
     "xp.css": "^0.2.6"
   },
   "devDependencies": {
