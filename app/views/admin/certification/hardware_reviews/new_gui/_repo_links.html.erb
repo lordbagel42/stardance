@@ -1,0 +1,22 @@
+<%# Cockpit repo-links card — a thin band that replaces the file-browser card.
+    Outbound links to the project's GitHub repo and the repo-aware HURT reviewer
+    tool. Both need a repo, so the card shows a muted note when none is linked. %>
+<section class="hardware-cockpit__card hardware-cockpit__card--links" aria-label="Repository links"
+         tabindex="0" data-cockpit-region="project">
+  <header class="hardware-cockpit__panel-head">
+    <span class="hardware-cockpit__panel-title">Repository</span>
+  </header>
+  <% if (repo_url = safe_external_url(@project.repo_url)) %>
+    <div class="hardware-cockpit__link-row">
+      <%= link_to "GitHub ↗", repo_url,
+            class: "hardware-cockpit__link-btn hardware-cockpit__link-btn--repo",
+            target: "_blank", rel: "noopener noreferrer" %>
+      <%# HURT reviewer tooling, preloaded with this project's repo (upstream #1165). %>
+      <%= link_to "HURT ↗", "https://hurt-xi.vercel.app/?#{ { repo: repo_url }.to_query }",
+            class: "hardware-cockpit__link-btn hardware-cockpit__link-btn--hurt",
+            target: "_blank", rel: "noopener noreferrer" %>
+    </div>
+  <% else %>
+    <p class="hardware-cockpit__files-empty">No repository linked.</p>
+  <% end %>
+</section>

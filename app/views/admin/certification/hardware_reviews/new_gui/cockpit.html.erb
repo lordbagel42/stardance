@@ -98,7 +98,9 @@
       </section>
 
       <%= render "admin/certification/hardware_reviews/new_gui/verdict" %>
-      <%= render "admin/certification/hardware_reviews/new_gui/files" %>
+      <%# File-browser card disabled for now; replaced by the repo-links card. Its
+          partial/controller/endpoints stay in the repo so it can be re-enabled. %>
+      <%= render "admin/certification/hardware_reviews/new_gui/repo_links" %>
 
       <%# Queue actions + notes stack on the right of the file browser. Wrapped into
           one grid cell so a long README growing the file browser doesn't prise these

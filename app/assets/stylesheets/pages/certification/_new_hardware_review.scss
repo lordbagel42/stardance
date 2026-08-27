@@ -216,6 +216,12 @@
     &--history { grid-area: history; }
     &--verdict { grid-area: verdict; }
     &--files { grid-area: files; }
+    // Repo-links card takes over the freed file-browser slot, but stays a thin
+    // band pinned to the top rather than stretching to the taller side stack.
+    &--links {
+      grid-area: files;
+      align-self: start;
+    }
   }
 
   // The focused region gets a soft ring — and drives the contextual shortcut bar.
@@ -247,6 +253,8 @@
   &__card--history {
     align-self: stretch;
     min-height: 16.5rem;
+    // Nudged down slightly so it doesn't sit flush under the project/feedback row.
+    margin-top: var(--space-s);
   }
 
   &__history-scroll {
@@ -655,7 +663,8 @@
   &__action,
   &__queue-btn,
   &__claim-cta,
-  &__files-retry {
+  &__files-retry,
+  &__link-btn {
     appearance: none;
     display: inline-flex;
     flex-wrap: wrap;
@@ -696,6 +705,29 @@
     &--unclaim {
       color: var(--color-brand-salmon);
       border-color: var(--color-brand-salmon);
+    }
+  }
+
+  // Repo-links card — a row of outbound link-buttons (repo + HURT).
+  &__link-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  // Link-buttons reuse the shared button geometry as outline pills: repo blue,
+  // HURT mint.
+  &__link-btn {
+    text-decoration: none;
+
+    &--repo {
+      color: var(--color-brand-blue);
+      border-color: var(--color-brand-blue);
+    }
+
+    &--hurt {
+      color: var(--color-brand-mint);
+      border-color: var(--color-brand-mint);
     }
   }
 
