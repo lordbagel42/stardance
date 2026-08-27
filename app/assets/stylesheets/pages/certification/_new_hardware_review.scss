@@ -1340,53 +1340,44 @@
     color: var(--color-space-text-muted);
   }
 
-  // ── Custom video player chrome (overlays the bottom of the video) ─────────
+  // ── Custom video player chrome (Vimeo/Plyr-style; overlays the video) ─────
+  // Scrim uses set-1 (#08061E) per branding — never pure black — and lilac is
+  // the accent (branding's default primary). Always visible; the scrim keeps it
+  // legible over any frame.
   &__player {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     display: flex;
-    align-items: center;
-    gap: var(--space-s);
-    padding: var(--space-l) var(--space-m) var(--space-s);
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-xl) var(--space-m) var(--space-s);
     border-radius: 0 0 var(--profile-radius) var(--profile-radius);
-    background: linear-gradient(to top, rgba(8, 6, 30, 0.94) 30%, rgba(8, 6, 30, 0));
-    color: var(--color-brand-off-white);
+    background: linear-gradient(to top, hsl(245 55% 8% / 0.96) 25%, hsl(245 55% 8% / 0));
+    color: var(--color-space-text);
     font-size: var(--font-size-xs);
-
-    // Fade the chrome in only when the pointer is over the video.
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-
-  &__lightbox-stage:hover &__player,
-  &__player:focus-within {
-    opacity: 1;
-  }
-
-  &__player-btn {
-    flex: 0 0 auto;
-    min-width: 2.1rem;
-    padding: var(--space-xxs) var(--space-xs);
-    border-radius: var(--radius-s, 6px);
-    background: var(--color-overlay-light-soft);
-    color: var(--color-brand-off-white);
-    font-size: var(--font-size-s);
-    line-height: 1;
-
-    &:hover {
-      background: var(--color-overlay-light-strong);
-    }
   }
 
   &__player-scrub {
     position: relative;
-    flex: 1 1 auto;
-    height: 0.45rem;
+    height: 0.35rem;
     border-radius: 999px;
-    background: var(--color-overlay-light-soft);
+    background: var(--color-overlay-light);
     cursor: pointer;
+    transition: height 0.12s ease;
+
+    &:hover {
+      height: 0.55rem;
+    }
+  }
+
+  &__player-buffered {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background: var(--color-overlay-light);
   }
 
   &__player-progress {
@@ -1394,39 +1385,98 @@
     inset: 0 auto 0 0;
     width: 0;
     border-radius: 999px;
-    background: var(--color-brand-mint);
+    background: var(--color-brand-lilac);
+  }
+
+  &__player-handle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px hsl(245 55% 8% / 0.6);
+    transform: translate(50%, -50%) scale(0);
+    transition: transform 0.12s ease;
+  }
+
+  &__player-scrub:hover &__player-handle {
+    transform: translate(50%, -50%) scale(1);
+  }
+
+  &__player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+  }
+
+  &__player-cluster {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+  }
+
+  &__player-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.9rem;
+    height: 1.9rem;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text);
+    font-size: var(--font-size-m);
+    line-height: 1;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--color-overlay-light);
+    }
   }
 
   &__player-time {
-    flex: 0 0 auto;
+    margin-left: var(--space-xs);
     font-variant-numeric: tabular-nums;
-    color: var(--color-brand-cream);
+    color: var(--color-space-text-muted);
   }
 
   &__player-speed {
     display: flex;
-    flex: 0 0 auto;
-    gap: 2px;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--color-overlay-light-soft);
+  }
+
+  &__player-speed-label {
+    padding: 0 var(--space-xs);
+    color: var(--color-space-text-muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
   }
 
   &__player-pill {
-    padding: 2px 6px;
-    border-radius: var(--radius-s, 6px);
+    padding: 3px 7px;
+    border-radius: 999px;
     background: transparent;
-    color: var(--color-brand-blue);
-    font-size: 0.7rem;
+    color: var(--color-space-text-muted);
+    font-size: 0.68rem;
     font-variant-numeric: tabular-nums;
-    opacity: 0.5;
+    transition: background 0.12s ease, color 0.12s ease;
 
     &:hover {
-      opacity: 0.85;
+      color: var(--color-space-text);
     }
 
     &.is-active {
-      background: var(--color-brand-mint);
-      color: var(--color-space-bg);
+      background: var(--color-brand-lilac);
+      color: var(--color-set-1-bg);
       font-weight: 700;
-      opacity: 1;
     }
   }
 

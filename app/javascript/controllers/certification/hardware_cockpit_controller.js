@@ -354,26 +354,45 @@ export default class extends Controller {
     this.syncPlayerUI();
   }
 
+  // Vimeo/Plyr-style layout: a full-width scrubber (buffered + played + a handle
+  // that appears on hover) above a control row split into a left transport
+  // cluster and a right JKL speed ladder.
   buildPlayerBar() {
     const bar = document.createElement("div");
     bar.className = "hardware-cockpit__player";
 
+    const scrub = document.createElement("div");
+    scrub.className = "hardware-cockpit__player-scrub";
+    this.lbBuffered = document.createElement("div");
+    this.lbBuffered.className = "hardware-cockpit__player-buffered";
+    this.lbProgress = document.createElement("div");
+    this.lbProgress.className = "hardware-cockpit__player-progress";
+    this.lbHandle = document.createElement("div");
+    this.lbHandle.className = "hardware-cockpit__player-handle";
+    this.lbProgress.appendChild(this.lbHandle);
+    scrub.append(this.lbBuffered, this.lbProgress);
+    scrub.addEventListener("pointerdown", (event) => this.scrubFrom(event, scrub));
+
+    const row = document.createElement("div");
+    row.className = "hardware-cockpit__player-row";
+
+    const left = document.createElement("div");
+    left.className = "hardware-cockpit__player-cluster";
     this.lbPlayBtn = this.playerButton("❚❚", "Play / pause · k or space", () => this.togglePlay());
     const back = this.playerButton("⟨", "Step back 1s · ← / h (shift = 10s)", () => this.stepVideo(-1));
     const fwd = this.playerButton("⟩", "Step forward 1s · → (shift = 10s)", () => this.stepVideo(1));
-
-    const scrub = document.createElement("div");
-    scrub.className = "hardware-cockpit__player-scrub";
-    this.lbProgress = document.createElement("div");
-    this.lbProgress.className = "hardware-cockpit__player-progress";
-    scrub.appendChild(this.lbProgress);
-    scrub.addEventListener("pointerdown", (event) => this.scrubFrom(event, scrub));
-
     this.lbTime = document.createElement("span");
     this.lbTime.className = "hardware-cockpit__player-time";
+    left.append(this.lbPlayBtn, back, fwd, this.lbTime);
 
+    const right = document.createElement("div");
+    right.className = "hardware-cockpit__player-cluster";
     const speed = document.createElement("div");
     speed.className = "hardware-cockpit__player-speed";
+    const speedLabel = document.createElement("span");
+    speedLabel.className = "hardware-cockpit__player-speed-label";
+    speedLabel.textContent = "JKL";
+    speed.appendChild(speedLabel);
     this.lbSpeedPills = this.RATE_LADDER.map((r) => {
       const pill = document.createElement("button");
       pill.type = "button";
@@ -384,8 +403,10 @@ export default class extends Controller {
       speed.appendChild(pill);
       return pill;
     });
+    right.appendChild(speed);
 
-    bar.append(this.lbPlayBtn, back, scrub, fwd, this.lbTime, speed);
+    row.append(left, right);
+    bar.append(scrub, row);
     return bar;
   }
 
@@ -423,8 +444,11 @@ export default class extends Controller {
     if (!this.lbVideo) return;
     const video = this.lbVideo;
     if (this.lbPlayBtn) this.lbPlayBtn.textContent = this.rate ? "❚❚" : "▶";
-    if (this.lbProgress && video.duration) {
-      this.lbProgress.style.width = `${(video.currentTime / video.duration) * 100}%`;
+    const pct = video.duration ? (video.currentTime / video.duration) * 100 : 0;
+    if (this.lbProgress) this.lbProgress.style.width = `${pct}%`;
+    if (this.lbBuffered && video.duration && video.buffered.length) {
+      const end = video.buffered.end(video.buffered.length - 1);
+      this.lbBuffered.style.width = `${(end / video.duration) * 100}%`;
     }
     if (this.lbTime) this.lbTime.textContent = `${this.fmtTime(video.currentTime)} / ${this.fmtTime(video.duration)}`;
     this.lbSpeedPills?.forEach((pill, i) => pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate));
