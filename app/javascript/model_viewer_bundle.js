@@ -37,15 +37,21 @@ export async function renderModel({ canvas, src, format, wasmUrl }) {
   scene.add(object);
   frameObject(object, camera, controls);
 
+  // Size to the CONTAINER, never the canvas. The canvas is absolutely positioned
+  // (see SCSS) so it's out of flow and can't feed its own size back into the
+  // observed element — observing the canvas + setSize would otherwise loop and
+  // grow the page unbounded. updateStyle=false leaves the canvas's CSS (inset:0)
+  // to size it; we only drive the drawing buffer.
+  const stage = canvas.parentElement;
   const resize = () => {
-    const w = canvas.clientWidth || 1;
-    const h = canvas.clientHeight || 1;
+    const w = Math.max(1, stage.clientWidth);
+    const h = Math.max(1, stage.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   };
   const observer = new ResizeObserver(resize);
-  observer.observe(canvas);
+  observer.observe(stage);
   resize();
 
   let alive = true;
@@ -70,8 +76,10 @@ export async function renderModel({ canvas, src, format, wasmUrl }) {
 }
 
 async function loadStl(src) {
+  // STLLoader's error callback rejects with a ProgressEvent (no .message), so wrap
+  // it in a real Error for a readable status line.
   const geometry = await new Promise((resolve, reject) =>
-    new STLLoader().load(src, resolve, undefined, reject)
+    new STLLoader().load(src, resolve, undefined, () => reject(new Error("couldn't fetch the STL file")))
   );
   geometry.computeVertexNormals();
   return new THREE.Mesh(geometry, surfaceMaterial(SURFACE));

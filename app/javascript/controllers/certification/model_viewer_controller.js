@@ -23,8 +23,9 @@ export default class extends Controller {
       });
       if (this.hasStatusTarget) this.statusTarget.remove();
     } catch (error) {
+      const reason = error?.message || "your browser may not support WebGL";
       if (this.hasStatusTarget) {
-        this.statusTarget.textContent = `Couldn't render this model — ${error.message}`;
+        this.statusTarget.textContent = `Couldn't render this model — ${reason}`;
       }
     }
   }

@@ -74,6 +74,10 @@ export default class extends Controller {
   popOut() {
     const body = this.previewEl;
     if (!body || this.modal) return;
+    // A 3D model preview owns a live WebGL context; cloning its markup would spin
+    // up a second one (and leak contexts on repeat pop-outs, blanking the inline
+    // canvas). The inline viewer is already interactive, so skip pop-out for it.
+    if (body.querySelector("[data-controller~='certification--model-viewer']")) return;
 
     const overlay = document.createElement("div");
     overlay.className = "hardware-cockpit__preview-modal";

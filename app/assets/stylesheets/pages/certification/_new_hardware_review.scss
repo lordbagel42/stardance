@@ -1481,20 +1481,23 @@
   }
 
   // ── 3D model preview (STL / STEP via three.js) ───────────────────────────
+  // The container is the sole size authority (min-height, or the pane when it's
+  // definite); the canvas is absolutely positioned so it's out of flow and can't
+  // feed its own drawing-buffer size back into the ResizeObserver — that loop is
+  // what grew the page unbounded.
   &__model {
     position: relative;
-    display: flex;
     width: 100%;
     min-height: 24rem;
     height: 100%;
   }
 
   &__model-canvas {
+    position: absolute;
+    inset: 0;
     display: block;
-    flex: 1 1 auto;
     width: 100%;
     height: 100%;
-    min-height: 24rem;
     cursor: grab;
 
     &:active {
