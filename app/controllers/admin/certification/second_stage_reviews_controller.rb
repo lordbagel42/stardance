@@ -13,7 +13,10 @@ class Admin::Certification::SecondStageReviewsController < Admin::Certification:
     render plain: "This request is missing review details. Reload the review and try again.", status: :bad_request
   end
   rescue_from ActiveRecord::StaleObjectError do
-    render plain: "This review changed in another tab. Reload it before deciding.", status: :conflict
+    render html: helpers.safe_join([
+      "This review changed in another tab.",
+      helpers.link_to("Open the current review", second_stage_path)
+    ], " "), status: :conflict
   end
   rescue_from ::Certification::SecondStageReview::ReleaseFailed do
     redirect_to second_stage_path, alert: "The decision was saved, but release did not finish. Retry release from this review."
