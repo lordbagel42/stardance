@@ -43,6 +43,50 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Used AI to rubber-duck CSS.", @project.ai_declaration
   end
 
+  test "invalid inline edits preserve submitted fields and show validation errors" do
+    sign_in @owner
+
+    patch project_path(@project), params: {
+      inline_project_show: "1",
+      project: {
+        title: "",
+        description: "Keep this unsaved description",
+        ai_declaration: "Used AI for debugging"
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "form.project-show--editing"
+    assert_select "input[name='project[title]'][value='']"
+    assert_select "textarea[name='project[description]']", text: "Keep this unsaved description"
+    assert_select "textarea[name='project[ai_declaration]']", text: "Used AI for debugging"
+    assert_select "[role='alert']", text: /Title can't be blank/
+    assert_equal "Forest Odyssey", @project.reload.title
+    assert_equal "Explore a magical forest", @project.description
+  end
+
+  test "inline URL validation failures preserve submitted fields" do
+    sign_in @owner
+
+    patch project_path(@project), params: {
+      inline_project_show: "1",
+      project: {
+        title: "Unsaved title",
+        description: "Keep these details",
+        demo_url: "https://example.com",
+        repo_url: "https://example.com"
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "input[name='project[title]'][value='Unsaved title']"
+    assert_select "input[name='project[demo_url]'][value='https://example.com']"
+    assert_select "input[name='project[repo_url]'][value='https://example.com']"
+    assert_select "textarea[name='project[description]']", text: "Keep these details"
+    assert_select "[role='alert']", text: /Demo URL and Repository URL cannot be the same/
+    assert_equal "Forest Odyssey", @project.reload.title
+  end
+
   test "linking and unlinking a Hackatime key is recorded against the owner" do
     key = User::HackatimeProject.create!(user: @owner, name: "forest-odyssey")
     sign_in @owner
