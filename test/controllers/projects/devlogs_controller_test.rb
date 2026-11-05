@@ -73,6 +73,21 @@ class Projects::DevlogsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ original.id ], devlog.reload.attachments.map(&:id)
   end
 
+  test "failed body update keeps removed attachment and does not attach replacement" do
+    devlog = create_devlog
+    original = devlog.attachments.first
+    sign_in @owner
+
+    patch project_devlog_path(@project, devlog), params: {
+      post_devlog: { body: "", attachments: [ png_upload ] },
+      remove_attachment_ids: [ original.id ]
+    }
+
+    assert_response :unprocessable_entity
+    assert_equal [ original.id ], devlog.reload.attachments.map(&:id)
+    assert_equal "Built the thing.", devlog.body
+  end
+
   test "a devlog without attachments can add one from the edit page and still be deleted" do
     devlog = create_devlog
     devlog.attachments.each(&:purge)

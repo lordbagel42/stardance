@@ -83,7 +83,9 @@ class Projects::DevlogsController < ApplicationController
     body_params = permitted_params.except(:attachments)
     attachment_ids_to_remove = Array(params[:remove_attachment_ids]).reject(&:blank?)
     attachments_to_remove = @devlog.attachments.where(id: attachment_ids_to_remove)
-    remaining_count = @devlog.attachments.count - attachments_to_remove.count
+    removed_attachment_ids = attachments_to_remove.pluck(:id)
+    attachments_to_keep = @devlog.attachments.reject { |attachment| removed_attachment_ids.include?(attachment.id) }
+    remaining_count = attachments_to_keep.size
 
     # Remove selected attachments first
     if remaining_count + new_attachments.count < 1
@@ -104,18 +106,10 @@ class Projects::DevlogsController < ApplicationController
       return render :edit, status: :unprocessable_entity
     end
 
-    if attachment_ids_to_remove.any?
-      attachments_to_remove.each(&:purge_later)
-    end
-
     @devlog.uploading_attachments = new_attachments.present?
+    update_params = body_params.merge(attachments: attachments_to_keep.map(&:blob) + new_attachments)
 
-    if @devlog.update(body_params)
-      # Append new attachments instead of replacing
-      if new_attachments.any?
-        @devlog.attachments.attach(new_attachments)
-      end
-
+    if @devlog.update(update_params)
       # Create version history if body changed
       if previous_body != @devlog.body
         @devlog.create_version!(user: current_user, previous_body: previous_body)
