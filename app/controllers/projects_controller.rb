@@ -439,8 +439,16 @@ class ProjectsController < ApplicationController
           end
         end
         format.html do
-          flash[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
-          redirect_to url_from(params[:return_to]) || edit_project_path(@project)
+          message = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+          if params[:inline_project_show].present?
+            flash.now[:alert] = message
+            @body_class = "app-layout-page"
+            prepare_project_show_context
+            render :show, status: :unprocessable_entity
+          else
+            flash[:alert] = message
+            redirect_to url_from(params[:return_to]) || edit_project_path(@project)
+          end
         end
       end
     end
